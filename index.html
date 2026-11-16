@@ -336,6 +336,7 @@ async function loadData() {
   // Desktop defaults: lanes view, mouse-friendly hint
   if (IS_WIDE) setView('lanes');
   if (HAS_HOVER) document.querySelector('.header-right p').innerHTML = 'Click any event &middot; Hover for titles';
+  prefetchYearImages();
 }
 
 // ── INIT ───────────────────────────────────────────────────────────────────────
@@ -458,6 +459,43 @@ function dateToPercent(month, day) {
 const HAS_HOVER = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
 const IS_WIDE = window.matchMedia('(min-width: 900px)').matches;
 
+// ── WIKIPEDIA IMAGES ───────────────────────────────────────────────────────────
+const wikiImageCache = new Map();
+function wikiTitleFromUrl(url) {
+  const m = (url || '').match(/\/wiki\/([^#?]+)/);
+  return m ? m[1] : null;
+}
+async function getWikiImage(ev) {
+  if (ev.image) return { src: ev.image, credit: ev.imageCredit };
+  const title = wikiTitleFromUrl(ev.wiki);
+  if (!title) return null;
+  if (wikiImageCache.has(title)) return wikiImageCache.get(title);
+  let result = null;
+  try {
+    const res = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${title}`);
+    if (res.ok) {
+      const j = await res.json();
+      if (j.thumbnail && j.thumbnail.source) {
+        result = {
+          src: j.thumbnail.source.replace(/\/(\d+)px-/, '/640px-'),
+          credit: 'Wikipedia / Wikimedia Commons'
+        };
+      }
+    }
+  } catch (e) { /* offline or blocked — card shows text only */ }
+  wikiImageCache.set(title, result);
+  return result;
+}
+function prefetchYearImages() {
+  const yearAtStart = currentYear;
+  const evs = eventsForYear(currentYear);
+  let i = 0;
+  (function next() {
+    if (i >= evs.length || currentYear !== yearAtStart) return;
+    getWikiImage(evs[i++]).finally(() => setTimeout(next, 150));
+  })();
+}
+
 // ── TOOLTIP (desktop hover) ────────────────────────────────────────────────────
 function attachTooltip(node, ev) {
   if (!HAS_HOVER) return;
@@ -492,6 +530,7 @@ function goToYear(y) {
   if (viewMode === 'single') { renderNodes(); updateZoomBand(); } else buildLaneView();
   updateEmptyState();
   if (currentEventId) closeModal();
+  prefetchYearImages();
 }
 function updateYearNavBtns() {
   const i = AVAILABLE_YEARS.indexOf(currentYear);
@@ -646,17 +685,19 @@ function closeModal() {
 function renderModal() {
   const ev = ALL_EVENTS.find(e => e.id === currentEventId); if (!ev) return;
   const d = DOMAINS[ev.domain];
-  const wrap = document.getElementById('modalImageWrap'); wrap.innerHTML = '';
-  if (ev.image) {
+  const wrap = document.getElementById('modalImageWrap'); wrap.innerHTML = ''; wrap.style.display = 'none';
+  const requestedId = ev.id;
+  getWikiImage(ev).then(img => {
+    if (currentEventId !== requestedId || !img) return;
     wrap.style.display = '';
-    const img = document.createElement('img'); img.className = 'modal-image';
-    img.src = ev.image; img.alt = ev.title;
-    img.onerror = () => { wrap.style.display = 'none'; };
-    wrap.appendChild(img);
-    if (ev.imageCredit) {
-      const cr = document.createElement('div'); cr.className = 'modal-image-credit'; cr.textContent = ev.imageCredit; wrap.appendChild(cr);
+    const image = document.createElement('img'); image.className = 'modal-image';
+    image.src = img.src; image.alt = ev.title;
+    image.onerror = () => { wrap.style.display = 'none'; };
+    wrap.appendChild(image);
+    if (img.credit) {
+      const cr = document.createElement('div'); cr.className = 'modal-image-credit'; cr.textContent = img.credit; wrap.appendChild(cr);
     }
-  } else { wrap.style.display = 'none'; }
+  });
   document.getElementById('modalDomainIcon').textContent = d.icon;
   document.getElementById('modalDomainLabel').textContent = d.label;
   document.getElementById('modalDomainLabel').style.color = d.color;
