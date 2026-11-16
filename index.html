@@ -100,13 +100,15 @@
   .lane-view { display: none; flex-direction: column; }
   .lane-view.visible { display: flex; }
   .single-view.hidden { display: none; }
-  .lane { display: flex; align-items: center; border-bottom: 1px solid var(--border); min-height: 58px; }
+  .lane { display: flex; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.04); min-height: 44px; }
   .lane:last-child { border-bottom: none; }
   .lane-label-col { width: 46px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
   .lane-icon { font-size: 1.1rem; }
-  .lane-track { flex: 1; position: relative; height: 58px; display: flex; align-items: center; }
+  .lane-track { flex: 1; position: relative; height: 100%; min-height: 44px; display: flex; align-items: center; overflow: hidden; }
   .lane-line { position: absolute; left: 0; right: 0; height: 2px; opacity: 0.2; }
   .lane-nodes { position: absolute; left: 0; right: 0; top: 0; bottom: 0; }
+  .lane-empty .lane-line { opacity: 0.06; }
+  .lane-empty .lane-icon, .lane-empty .lane-name { opacity: 0.3; }
 
   /* EMPTY STATE */
   .empty-state { display: none; flex-direction: column; align-items: center; justify-content: center; gap: 0.5rem; padding: 2rem; text-align: center; flex: 1; }
@@ -154,11 +156,8 @@
 
   /* LANE NAMES & NODE LABELS (shown on desktop) */
   .lane-name { display: none; font-size: 0.68rem; font-weight: 500; letter-spacing: 0.04em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .lane-node-label { position: absolute; transform: translateX(-50%); font-size: 0.6rem; color: #7e90ab; white-space: nowrap; max-width: 170px; overflow: hidden; text-overflow: ellipsis; pointer-events: none; display: none; line-height: 1.2; }
-  .lane-node-label.above { bottom: calc(50% + 17px); }
-  .lane-node-label.below { top: calc(50% + 17px); }
-  .lane-node-label.edge-l { transform: translateX(0); }
-  .lane-node-label.edge-r { transform: translateX(-100%); }
+  .lane-node-label { position: absolute; top: 50%; transform: translate(13px, -50%); font-size: 0.57rem; color: #7e90ab; white-space: nowrap; max-width: 150px; overflow: hidden; text-overflow: ellipsis; pointer-events: none; display: none; line-height: 1.2; }
+  .lane-node-label.edge-r { transform: translate(calc(-100% - 13px), -50%); }
 
   /* TOOLTIP (desktop hover) */
   #tooltip { position: fixed; z-index: 60; background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 0.5rem 0.7rem; pointer-events: none; opacity: 0; transition: opacity 0.12s; max-width: 260px; box-shadow: 0 6px 24px rgba(0,0,0,0.5); }
@@ -175,9 +174,10 @@
     .month-label { font-size: 0.62rem; }
     .single-view:not(.hidden) { flex: 1; display: flex; flex-direction: column; justify-content: center; }
     .timeline-track { height: min(56vh, 480px); }
-    .lane-view.visible { flex: 1; overflow-y: auto; }
-    .lane { flex: 1; min-height: 56px; }
-    .lane-track { height: 100%; }
+    .lane-view.visible { flex: 1; overflow: hidden; }
+    .lane { flex: 1 1 0; min-height: 0; }
+    .lane-track { height: 100%; min-height: 0; }
+    .lane-nodes .node { width: 14px; height: 14px; }
     .lane-label-col { width: 180px; justify-content: flex-start; gap: 0.55rem; padding-left: 0.2rem; }
     .lane-name { display: inline-block; }
     .lane-node-label { display: block; }
@@ -229,6 +229,7 @@
     <div class="view-toggle">
       <button class="toggle-btn active" id="btnSingleView">&#8212; Single</button>
       <button class="toggle-btn" id="btnLaneView">&#8801; Lanes</button>
+      <a class="toggle-btn" href="weft-3d.html" style="display:flex;align-items:center;text-decoration:none;border-left:1px solid var(--border)">&#10022; 3D</a>
     </div>
   </div>
 
@@ -633,10 +634,11 @@ function updateNodeVisibility() {
 function buildLaneView() {
   const lv = document.getElementById('laneView'); lv.innerHTML = '';
   Object.entries(DOMAINS).forEach(([key, d]) => {
-    const evs = eventsForYear(currentYear).filter(e =>
-      e.domain === key && (zoomedMonth === null || e.month === zoomedMonth + 1));
-    if (!activeFilters.has(key) || evs.length === 0) return;
-    const lane = document.createElement('div'); lane.className = 'lane';
+    const active = activeFilters.has(key);
+    const evs = active ? eventsForYear(currentYear).filter(e =>
+      e.domain === key && (zoomedMonth === null || e.month === zoomedMonth + 1)) : [];
+    const lane = document.createElement('div');
+    lane.className = 'lane' + (evs.length ? '' : ' lane-empty');
     const lc = document.createElement('div'); lc.className = 'lane-label-col';
     lc.innerHTML = `<span class="lane-icon" title="${d.label}">${d.icon}</span><span class="lane-name" style="color:${d.color}">${d.label}</span>`;
     lane.appendChild(lc);
@@ -644,9 +646,10 @@ function buildLaneView() {
     const line = document.createElement('div'); line.className = 'lane-line'; line.style.background = d.color; track.appendChild(line);
     const ln = document.createElement('div'); ln.className = 'lane-nodes';
     evs.forEach((ev, i) => {
+      const pct = dateToPercent(ev.month, ev.day);
       const node = document.createElement('div');
       node.className = 'node mid'; node.dataset.domain = ev.domain; node.dataset.id = ev.id;
-      node.style.left = `${dateToPercent(ev.month, ev.day)}%`;
+      node.style.left = `${pct}%`;
       node.style.background = d.color; node.style.boxShadow = `0 0 8px ${d.color}99`;
       node.style.setProperty('--delay', `${(i * 0.25) % 2.5}s`);
       if (currentEventId === ev.id) node.classList.add('active-node');
@@ -654,12 +657,16 @@ function buildLaneView() {
       node.addEventListener('click', () => openModal(ev.id));
       attachTooltip(node, ev);
       ln.appendChild(node);
-      const pct = dateToPercent(ev.month, ev.day);
-      const lbl = document.createElement('div');
-      lbl.className = 'lane-node-label ' + (i % 2 === 0 ? 'above' : 'below') + (pct < 4 ? ' edge-l' : pct > 95 ? ' edge-r' : '');
-      lbl.style.left = pct + '%';
-      lbl.textContent = ev.title;
-      ln.appendChild(lbl);
+      // Label beside the dot — only when there's room before the next dot
+      const nextPct = i < evs.length - 1 ? dateToPercent(evs[i + 1].month, evs[i + 1].day) : 101;
+      const nearRightEdge = pct > 86;
+      if ((nextPct - pct) > 12 || i === evs.length - 1) {
+        const lbl = document.createElement('div');
+        lbl.className = 'lane-node-label' + (nearRightEdge ? ' edge-r' : '');
+        lbl.style.left = pct + '%';
+        lbl.textContent = ev.title;
+        ln.appendChild(lbl);
+      }
     });
     track.appendChild(ln); lane.appendChild(track); lv.appendChild(lane);
   });
@@ -686,7 +693,8 @@ function buildFilterPanel() {
 }
 
 function updateEmptyState() {
-  document.getElementById('emptyState').classList.toggle('visible', visibleEvents().length === 0);
+  document.getElementById('emptyState').classList.toggle('visible',
+    viewMode === 'single' && visibleEvents().length === 0);
 }
 function setActiveNode(id) {
   document.querySelectorAll('.node').forEach(n => { n.classList.toggle('active-node', parseInt(n.dataset.id) === id); });
