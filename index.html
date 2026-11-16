@@ -144,6 +144,14 @@
   .modal-close { background: none; border: none; color: var(--text-dim); font-size: 1.3rem; cursor: pointer; padding: 0.5rem; touch-action: manipulation; }
   .nav-counter { font-family: 'Space Mono', monospace; font-size: 0.6rem; color: var(--text-dim); }
 
+  /* THREADS */
+  .modal-threads { margin-top: 1rem; display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center; }
+  .threads-label { width: 100%; font-family: 'Space Mono', monospace; font-size: 0.58rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-dim); }
+  .thread-chip { display: inline-flex; align-items: center; gap: 0.4rem; background: rgba(255,255,255,0.04); border: 1px solid var(--border); color: var(--text); font-size: 0.7rem; padding: 0.35rem 0.6rem; border-radius: 16px; cursor: pointer; font-family: 'Space Grotesk', sans-serif; text-align: left; transition: border-color 0.15s; }
+  .thread-chip:hover, .thread-chip:active { border-color: rgba(255,255,255,0.3); }
+  .thread-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .thread-year { font-family: 'Space Mono', monospace; font-size: 0.58rem; color: var(--text-dim); }
+
   /* LANE NAMES & NODE LABELS (shown on desktop) */
   .lane-name { display: none; font-size: 0.68rem; font-weight: 500; letter-spacing: 0.04em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .lane-node-label { position: absolute; transform: translateX(-50%); font-size: 0.6rem; color: #7e90ab; white-space: nowrap; max-width: 170px; overflow: hidden; text-overflow: ellipsis; pointer-events: none; display: none; line-height: 1.2; }
@@ -278,6 +286,7 @@
       <div class="modal-date" id="modalDate"></div>
       <div class="modal-text" id="modalText"></div>
       <div class="modal-links" id="modalLinks"></div>
+      <div class="modal-threads" id="modalThreads"></div>
     </div>
   </div>
 </div>
@@ -289,6 +298,7 @@
 let DOMAINS = {};
 let ALL_EVENTS = [];
 let AVAILABLE_YEARS = [];
+let THREAD_MAP = new Map();
 
 const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
@@ -320,6 +330,17 @@ async function loadData() {
 
   DOMAINS = data.domains;
   ALL_EVENTS = data.events;
+
+  // Build bidirectional thread map
+  THREAD_MAP = new Map();
+  ALL_EVENTS.forEach(e => {
+    (e.threads || []).forEach(t => {
+      if (!THREAD_MAP.has(e.id)) THREAD_MAP.set(e.id, new Set());
+      THREAD_MAP.get(e.id).add(t);
+      if (!THREAD_MAP.has(t)) THREAD_MAP.set(t, new Set());
+      THREAD_MAP.get(t).add(e.id);
+    });
+  });
   AVAILABLE_YEARS = [...new Set(ALL_EVENTS.map(e => e.year))].sort((a, b) => a - b);
   Object.keys(DOMAINS).forEach(k => activeFilters.add(k));
 
@@ -678,6 +699,16 @@ function openModal(id) {
   document.getElementById('modalBackdrop').classList.add('visible');
   document.getElementById('modalEl').scrollTop = 0;
 }
+function jumpToEvent(id) {
+  const ev = ALL_EVENTS.find(e => e.id === id); if (!ev) return;
+  if (ev.year !== currentYear) { currentEventId = null; goToYear(ev.year); }
+  if (!activeFilters.has(ev.domain)) {
+    activeFilters.add(ev.domain);
+    buildFilterPanel();
+    if (viewMode === 'single') updateNodeVisibility(); else buildLaneView();
+  }
+  openModal(id);
+}
 function closeModal() {
   document.getElementById('modalBackdrop').classList.remove('visible');
   setActiveNode(null); currentEventId = null;
@@ -710,6 +741,22 @@ function renderModal() {
     a.className = 'modal-link'; a.textContent = '→ Wikipedia';
     a.style.borderColor = d.color + '44'; a.style.color = d.color; linksEl.appendChild(a);
   }
+  // Threads — connected events, both directions, in date order
+  const thEl = document.getElementById('modalThreads'); thEl.innerHTML = '';
+  const linkedIds = [...(THREAD_MAP.get(ev.id) || [])];
+  if (linkedIds.length) {
+    const linked = linkedIds.map(i => ALL_EVENTS.find(e => e.id === i)).filter(Boolean)
+      .sort((a, b) => (a.year * 10000 + a.month * 100 + a.day) - (b.year * 10000 + b.month * 100 + b.day));
+    const lab = document.createElement('div'); lab.className = 'threads-label'; lab.textContent = 'Threads'; thEl.appendChild(lab);
+    linked.forEach(e2 => {
+      const d2 = DOMAINS[e2.domain];
+      const chip = document.createElement('button'); chip.className = 'thread-chip';
+      chip.innerHTML = `<span class="thread-dot" style="background:${d2.color}"></span><span>${e2.title}</span><span class="thread-year">${e2.year}</span>`;
+      chip.addEventListener('click', () => jumpToEvent(e2.id));
+      thEl.appendChild(chip);
+    });
+  }
+
   const vis = visibleEvents(), idx = vis.findIndex(e => e.id === currentEventId);
   document.getElementById('navPrev').disabled = idx <= 0;
   document.getElementById('navNext').disabled = idx >= vis.length - 1;
