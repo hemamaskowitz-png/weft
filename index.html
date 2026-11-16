@@ -648,14 +648,15 @@ function renderModal() {
   const d = DOMAINS[ev.domain];
   const wrap = document.getElementById('modalImageWrap'); wrap.innerHTML = '';
   if (ev.image) {
+    wrap.style.display = '';
     const img = document.createElement('img'); img.className = 'modal-image';
     img.src = ev.image; img.alt = ev.title;
-    img.onerror = () => { wrap.innerHTML = `<div class="modal-no-image">${d.icon}</div>`; };
+    img.onerror = () => { wrap.style.display = 'none'; };
     wrap.appendChild(img);
     if (ev.imageCredit) {
       const cr = document.createElement('div'); cr.className = 'modal-image-credit'; cr.textContent = ev.imageCredit; wrap.appendChild(cr);
     }
-  } else { wrap.innerHTML = `<div class="modal-no-image">${d.icon}</div>`; }
+  } else { wrap.style.display = 'none'; }
   document.getElementById('modalDomainIcon').textContent = d.icon;
   document.getElementById('modalDomainLabel').textContent = d.label;
   document.getElementById('modalDomainLabel').style.color = d.color;
