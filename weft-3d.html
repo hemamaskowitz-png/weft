@@ -113,6 +113,7 @@
   <div class="card-date" id="cDate"></div>
   <div class="card-body" id="cBody"></div>
   <a class="card-link" id="cWiki" target="_blank" rel="noopener">&rarr; Wikipedia</a>
+  <div class="resp-row" id="cResp"></div>
   <div class="card-threads" id="cThreads"></div>
   <div class="who-row" id="cWho"></div>
 </div>
@@ -126,6 +127,12 @@
   .who-chip:hover { border-color: rgba(232,200,120,0.6); background: rgba(232,200,120,0.08); }
   .who-chip .wi { font-size: 0.75rem; line-height: 1; }
   .who-chip.place { border-style: dashed; }
+  .resp-row { margin-top: 0.9rem; display: flex; flex-wrap: wrap; gap: 0.35rem; }
+  .resp-label { width: 100%; font-family: 'Space Mono', monospace; font-size: 0.55rem; letter-spacing: 0.12em; text-transform: uppercase; color: #e8a8d8; }
+  .resp-chip { display: inline-flex; align-items: center; gap: 0.4rem; background: rgba(232,125,184,0.07); border: 1px solid rgba(232,125,184,0.35); color: #c8d4e8; font-size: 0.68rem; padding: 0.3rem 0.6rem; border-radius: 14px; cursor: pointer; font-family: 'Space Grotesk', system-ui, sans-serif; text-align: left; }
+  .resp-chip:hover { border-color: rgba(232,125,184,0.8); }
+  .resp-chip .d { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .resp-chip .y { font-family: 'Space Mono', monospace; font-size: 0.55rem; color: #5a6a80; }
   .who-globe { width: 84px; height: 84px; border-radius: 50%; cursor: pointer; flex-shrink: 0; margin-right: 0.35rem; box-shadow: 0 0 18px rgba(92,160,224,0.28); transition: box-shadow 0.2s, transform 0.2s; }
   .who-globe:hover { box-shadow: 0 0 26px rgba(232,200,120,0.55); transform: scale(1.05); }
   .wp-globe { float: right; width: 120px; height: 120px; border-radius: 50%; margin: 0 0 0.5rem 0.6rem; box-shadow: 0 0 22px rgba(92,160,224,0.3); }
@@ -231,6 +238,34 @@ window.WeftWho = (() => {
     return a;
   }
 
+
+  // ── Dates at the precision we actually know ──
+  function fmtEvDate(e) {
+    const p = e.precision || 'day';
+    if (p === 'year') return String(e.year);
+    if (p === 'month') return `${M[e.month - 1]} ${e.year}`;
+    return `${e.day} ${M[e.month - 1]} ${e.year}`;
+  }
+
+  // ── Art as response: what a work answered, and what an event inspired ──
+  function inspiredBy(id) { return D.events.filter(e => (e.respondsTo || []).includes(id)).sort((a, b) => evKey(a) - evKey(b)); }
+  function responseIds(ev) { return new Set([...(ev.respondsTo || []), ...inspiredBy(ev.id).map(e => e.id)]); }
+  function renderResponses(container, ev) {
+    container.innerHTML = '';
+    const row = (label, list) => {
+      if (!list.length) return;
+      const l = document.createElement('div'); l.className = 'resp-label'; l.textContent = label; container.appendChild(l);
+      list.forEach(e => {
+        const d = D.domains[e.domain] || { color: '#888' };
+        const b = document.createElement('button'); b.className = 'resp-chip';
+        b.innerHTML = `<span class="d" style="background:${d.color}"></span><span>${esc(e.title)}</span><span class="y">${e.year}</span>`;
+        b.addEventListener('click', () => onJump(e.id));
+        container.appendChild(b);
+      });
+    };
+    row('Made in response to', (ev.respondsTo || []).map(evById).filter(Boolean));
+    row(ev.art ? 'Answered in turn by' : 'Art it inspired', inspiredBy(ev.id));
+  }
 
   // ── World outline (Natural Earth, public domain) and small locator globes ──
   let worldP = null;
@@ -422,7 +457,7 @@ window.WeftWho = (() => {
     }));
   }
 
-  return { init, renderChips, openPerson, openPlace, close, life, fmtDate, fmtPlace, image, world };
+  return { init, renderChips, openPerson, openPlace, close, life, fmtDate, fmtPlace, image, world, fmtEvDate, renderResponses, responseIds };
 })();
 </script>
 <!--/WEFT-WHO-->
@@ -564,6 +599,7 @@ function build() {
         halo.scale.set(7 * r, 7 * r, 1);
         halo.position.copy(mesh.position);
         halo.userData.phase = seeded(ev.id * 31) * Math.PI * 2;
+        if (ev.art) { const ring = new THREE.Sprite(new THREE.SpriteMaterial({ map: ringTex, transparent: true, opacity: 0.85, depthWrite: false })); ring.scale.set(r * 5.2, r * 5.2, 1); ring.position.copy(mesh.position); world.add(ring); }
         world.add(halo);
         halos.push(halo);
         posById.set(ev.id, mesh.position.clone());
@@ -614,6 +650,14 @@ function threadStub(from, other, y0) {
 }
 
 // halo texture
+// a thin ring that marks works of art
+const ringTex = (() => {
+  const c = document.createElement('canvas'); c.width = c.height = 64;
+  const x = c.getContext('2d');
+  x.strokeStyle = 'rgba(255,255,255,0.95)'; x.lineWidth = 3.5;
+  x.beginPath(); x.arc(32, 32, 26, 0, Math.PI * 2); x.stroke();
+  return new THREE.CanvasTexture(c);
+})();
 const haloTex = (() => {
   const c = document.createElement('canvas'); c.width = c.height = 64;
   const x = c.getContext('2d');
@@ -649,7 +693,7 @@ function updateHover() {
       hovered.scale.setScalar(1.8);
       const ev = hovered.userData.ev;
       tip.querySelector('.tip-t').textContent = ev.title;
-      tip.querySelector('.tip-d').textContent = `${ev.day} ${MONTH_NAMES[ev.month-1]} ${ev.year} · ${DOMAINS[ev.domain].label}`;
+      tip.querySelector('.tip-d').textContent = `${WeftWho.fmtEvDate(ev)} · ${DOMAINS[ev.domain].label}${ev.art ? ' · art' : ''}`;
       tip.classList.add('on');
       canvas.style.cursor = 'pointer';
     } else { tip.classList.remove('on'); canvas.style.cursor = 'grab'; }
@@ -669,7 +713,7 @@ function openCard(ev) {
   document.getElementById('cDomIcon').textContent = d.icon;
   const dl = document.getElementById('cDomLabel'); dl.textContent = d.label; dl.style.color = d.color;
   document.getElementById('cTitle').textContent = ev.title;
-  document.getElementById('cDate').textContent = `${ev.day} ${MONTH_NAMES[ev.month-1]} ${ev.year}`;
+  document.getElementById('cDate').textContent = WeftWho.fmtEvDate(ev);
   document.getElementById('cBody').textContent = ev.body;
   const im = document.getElementById('cImg'); im.innerHTML = ''; im.style.display = 'none';
   WeftWho.image(ev).then(pic => {
@@ -681,10 +725,13 @@ function openCard(ev) {
     const cr = document.createElement('span'); cr.className = 'cr'; cr.textContent = pic.credit; im.appendChild(cr);
   });
   const w = document.getElementById('cWiki');
+  w.innerHTML = /wikipedia\.org/.test(ev.wiki || '') ? '&rarr; Wikipedia' : '&rarr; Read more';
   if (ev.wiki) { w.style.display = 'inline-block'; w.href = ev.wiki; w.style.borderColor = d.color + '44'; w.style.color = d.color; }
   else w.style.display = 'none';
   const ct = document.getElementById('cThreads'); ct.innerHTML = '';
-  const linked = [...(THREAD_MAP.get(ev.id) || [])].map(i => ALL_EVENTS.find(e => e.id === i)).filter(Boolean)
+  WeftWho.renderResponses(document.getElementById('cResp'), ev);
+  const respIds = WeftWho.responseIds(ev);
+  const linked = [...(THREAD_MAP.get(ev.id) || [])].filter(i => !respIds.has(i)).map(i => ALL_EVENTS.find(e => e.id === i)).filter(Boolean)
     .sort((a,b) => (a.year*10000+a.month*100+a.day) - (b.year*10000+b.month*100+b.day));
   if (linked.length) {
     const lab = document.createElement('div'); lab.className = 'ct-label'; lab.textContent = 'Threads'; ct.appendChild(lab);
@@ -992,7 +1039,7 @@ async function buildGlobeBase() {
 }
 
 function disposeGroup(g) {
-  g.traverse(o => { if (o.geometry) o.geometry.dispose(); if (o.material) { if (o.material.map && o.material.map !== haloTex) o.material.map.dispose(); o.material.dispose(); } });
+  g.traverse(o => { if (o.geometry) o.geometry.dispose(); if (o.material) { if (o.material.map && o.material.map !== haloTex && o.material.map !== ringTex) o.material.map.dispose(); o.material.dispose(); } });
   g.clear();
 }
 
@@ -1017,6 +1064,7 @@ function buildGlobe() {
     halo.scale.set(13, 13, 1); halo.position.copy(head.position);
     head.userData = { ev: e, t: evMonths(e), stalk, halo, base: 1, tip: ll(la, lo, GR + h) };
     globeDyn.add(stalk, head, halo); globePins.push(head); tipById.set(e.id, head);
+    if (e.art) { const ring = new THREE.Sprite(new THREE.SpriteMaterial({ map: ringTex, transparent: true, opacity: 0.9, depthWrite: false })); ring.scale.set(8, 8, 1); ring.position.copy(head.position); globeDyn.add(ring); head.userData.ring = ring; }
   });
   // threads as great-circle arcs, lifted off the surface in proportion to their length
   const done = new Set();
@@ -1053,6 +1101,7 @@ function updateGlobeTime(force) {
     h.material.opacity = lit ? 1 : 0.28;
     h.userData.stalk.material.opacity = lit ? 0.85 : 0.14;
     h.userData.halo.material.opacity = lit ? 0.55 * (1 - d / W * 0.6) : 0;
+    if (h.userData.ring) h.userData.ring.material.opacity = lit ? 0.9 : 0.15;
     if (lit) litPins.push([d, h]);
   });
   globeArcs.forEach(l => {

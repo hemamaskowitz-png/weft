@@ -146,6 +146,9 @@
   .modal-close { background: none; border: none; color: var(--text-dim); font-size: 1.3rem; cursor: pointer; padding: 0.5rem; touch-action: manipulation; }
   .nav-counter { font-family: 'Space Mono', monospace; font-size: 0.6rem; color: var(--text-dim); }
 
+  /* ART: a fine white ring marks works made in response to events */
+  .node.art { outline: 1.5px solid rgba(255,255,255,0.85); outline-offset: 2.5px; }
+
   /* THREADS */
   .modal-threads { margin-top: 1rem; display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center; }
   .threads-label { width: 100%; font-family: 'Space Mono', monospace; font-size: 0.58rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-dim); }
@@ -287,6 +290,7 @@
       <div class="modal-date" id="modalDate"></div>
       <div class="modal-text" id="modalText"></div>
       <div class="modal-links" id="modalLinks"></div>
+      <div class="resp-row" id="modalResp"></div>
       <div class="modal-threads" id="modalThreads"></div>
       <div class="who-row" id="modalWho"></div>
     </div>
@@ -304,6 +308,12 @@
   .who-chip:hover { border-color: rgba(232,200,120,0.6); background: rgba(232,200,120,0.08); }
   .who-chip .wi { font-size: 0.75rem; line-height: 1; }
   .who-chip.place { border-style: dashed; }
+  .resp-row { margin-top: 0.9rem; display: flex; flex-wrap: wrap; gap: 0.35rem; }
+  .resp-label { width: 100%; font-family: 'Space Mono', monospace; font-size: 0.55rem; letter-spacing: 0.12em; text-transform: uppercase; color: #e8a8d8; }
+  .resp-chip { display: inline-flex; align-items: center; gap: 0.4rem; background: rgba(232,125,184,0.07); border: 1px solid rgba(232,125,184,0.35); color: #c8d4e8; font-size: 0.68rem; padding: 0.3rem 0.6rem; border-radius: 14px; cursor: pointer; font-family: 'Space Grotesk', system-ui, sans-serif; text-align: left; }
+  .resp-chip:hover { border-color: rgba(232,125,184,0.8); }
+  .resp-chip .d { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .resp-chip .y { font-family: 'Space Mono', monospace; font-size: 0.55rem; color: #5a6a80; }
   .who-globe { width: 84px; height: 84px; border-radius: 50%; cursor: pointer; flex-shrink: 0; margin-right: 0.35rem; box-shadow: 0 0 18px rgba(92,160,224,0.28); transition: box-shadow 0.2s, transform 0.2s; }
   .who-globe:hover { box-shadow: 0 0 26px rgba(232,200,120,0.55); transform: scale(1.05); }
   .wp-globe { float: right; width: 120px; height: 120px; border-radius: 50%; margin: 0 0 0.5rem 0.6rem; box-shadow: 0 0 22px rgba(92,160,224,0.3); }
@@ -409,6 +419,34 @@ window.WeftWho = (() => {
     return a;
   }
 
+
+  // ── Dates at the precision we actually know ──
+  function fmtEvDate(e) {
+    const p = e.precision || 'day';
+    if (p === 'year') return String(e.year);
+    if (p === 'month') return `${M[e.month - 1]} ${e.year}`;
+    return `${e.day} ${M[e.month - 1]} ${e.year}`;
+  }
+
+  // ── Art as response: what a work answered, and what an event inspired ──
+  function inspiredBy(id) { return D.events.filter(e => (e.respondsTo || []).includes(id)).sort((a, b) => evKey(a) - evKey(b)); }
+  function responseIds(ev) { return new Set([...(ev.respondsTo || []), ...inspiredBy(ev.id).map(e => e.id)]); }
+  function renderResponses(container, ev) {
+    container.innerHTML = '';
+    const row = (label, list) => {
+      if (!list.length) return;
+      const l = document.createElement('div'); l.className = 'resp-label'; l.textContent = label; container.appendChild(l);
+      list.forEach(e => {
+        const d = D.domains[e.domain] || { color: '#888' };
+        const b = document.createElement('button'); b.className = 'resp-chip';
+        b.innerHTML = `<span class="d" style="background:${d.color}"></span><span>${esc(e.title)}</span><span class="y">${e.year}</span>`;
+        b.addEventListener('click', () => onJump(e.id));
+        container.appendChild(b);
+      });
+    };
+    row('Made in response to', (ev.respondsTo || []).map(evById).filter(Boolean));
+    row(ev.art ? 'Answered in turn by' : 'Art it inspired', inspiredBy(ev.id));
+  }
 
   // ── World outline (Natural Earth, public domain) and small locator globes ──
   let worldP = null;
@@ -600,7 +638,7 @@ window.WeftWho = (() => {
     }));
   }
 
-  return { init, renderChips, openPerson, openPlace, close, life, fmtDate, fmtPlace, image, world };
+  return { init, renderChips, openPerson, openPlace, close, life, fmtDate, fmtPlace, image, world, fmtEvDate, renderResponses, responseIds };
 })();
 </script>
 <!--/WEFT-WHO-->
@@ -816,7 +854,7 @@ function attachTooltip(node, ev) {
   node.addEventListener('mouseenter', () => {
     const t = document.getElementById('tooltip');
     t.querySelector('.tip-title').textContent = ev.title;
-    t.querySelector('.tip-date').textContent = `${ev.day} ${MONTH_NAMES[ev.month - 1]} ${ev.year} · ${DOMAINS[ev.domain].label}`;
+    t.querySelector('.tip-date').textContent = `${WeftWho.fmtEvDate(ev)} · ${DOMAINS[ev.domain].label}${ev.art ? ' · art' : ''}`;
     t.classList.add('visible');
     const r = node.getBoundingClientRect();
     const tw = t.offsetWidth, th = t.offsetHeight;
@@ -897,6 +935,7 @@ function renderNodes() {
     node.className = `node ${ev.position}`;
     node.dataset.domain = ev.domain;
     node.dataset.id = ev.id;
+    if (ev.art) node.classList.add('art');
     node.style.left = `${dateToPercent(ev.month, ev.day)}%`;
     node.style.background = DOMAINS[ev.domain].color;
     node.style.boxShadow = `0 0 8px ${DOMAINS[ev.domain].color}99`;
@@ -940,7 +979,7 @@ function buildLaneView() {
     evs.forEach((ev, i) => {
       const pct = dateToPercent(ev.month, ev.day);
       const node = document.createElement('div');
-      node.className = 'node mid'; node.dataset.domain = ev.domain; node.dataset.id = ev.id;
+      node.className = 'node mid' + (ev.art ? ' art' : ''); node.dataset.domain = ev.domain; node.dataset.id = ev.id;
       node.style.left = `${pct}%`;
       node.style.background = d.color; node.style.boxShadow = `0 0 8px ${d.color}99`;
       node.style.setProperty('--delay', `${(i * 0.25) % 2.5}s`);
@@ -1033,17 +1072,19 @@ function renderModal() {
   document.getElementById('modalDomainLabel').textContent = d.label;
   document.getElementById('modalDomainLabel').style.color = d.color;
   document.getElementById('modalTitle').textContent = ev.title;
-  document.getElementById('modalDate').textContent = `${ev.day} ${MONTH_NAMES[ev.month - 1]} ${ev.year}`;
+  document.getElementById('modalDate').textContent = WeftWho.fmtEvDate(ev);
   document.getElementById('modalText').textContent = ev.body;
   const linksEl = document.getElementById('modalLinks'); linksEl.innerHTML = '';
   if (ev.wiki) {
     const a = document.createElement('a'); a.href = ev.wiki; a.target = '_blank'; a.rel = 'noopener';
-    a.className = 'modal-link'; a.textContent = '→ Wikipedia';
+    a.className = 'modal-link'; a.textContent = /wikipedia\.org/.test(ev.wiki) ? '→ Wikipedia' : '→ Read more';
     a.style.borderColor = d.color + '44'; a.style.color = d.color; linksEl.appendChild(a);
   }
   // Threads — connected events, both directions, in date order
   const thEl = document.getElementById('modalThreads'); thEl.innerHTML = '';
-  const linkedIds = [...(THREAD_MAP.get(ev.id) || [])];
+  WeftWho.renderResponses(document.getElementById('modalResp'), ev);
+  const respIds = WeftWho.responseIds(ev);
+  const linkedIds = [...(THREAD_MAP.get(ev.id) || [])].filter(i => !respIds.has(i));
   if (linkedIds.length) {
     const linked = linkedIds.map(i => ALL_EVENTS.find(e => e.id === i)).filter(Boolean)
       .sort((a, b) => (a.year * 10000 + a.month * 100 + a.day) - (b.year * 10000 + b.month * 100 + b.day));
