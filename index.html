@@ -304,6 +304,9 @@
   .who-chip:hover { border-color: rgba(232,200,120,0.6); background: rgba(232,200,120,0.08); }
   .who-chip .wi { font-size: 0.75rem; line-height: 1; }
   .who-chip.place { border-style: dashed; }
+  .who-globe { width: 84px; height: 84px; border-radius: 50%; cursor: pointer; flex-shrink: 0; margin-right: 0.35rem; box-shadow: 0 0 18px rgba(92,160,224,0.28); transition: box-shadow 0.2s, transform 0.2s; }
+  .who-globe:hover { box-shadow: 0 0 26px rgba(232,200,120,0.55); transform: scale(1.05); }
+  .wp-globe { float: right; width: 120px; height: 120px; border-radius: 50%; margin: 0 0 0.5rem 0.6rem; box-shadow: 0 0 22px rgba(92,160,224,0.3); }
 
   #whoPanel { position: fixed; top: 70px; left: 1rem; width: 350px; max-width: calc(100vw - 2rem); max-height: calc(100vh - 100px); overflow-y: auto; z-index: 300; background: rgba(15,22,36,0.97); border: 1px solid rgba(232,200,120,0.28); border-radius: 16px; padding: 1.1rem 1.2rem 1.2rem; display: none; box-shadow: 0 12px 48px rgba(0,0,0,0.6); backdrop-filter: blur(8px); font-family: 'Space Grotesk', system-ui, sans-serif; color: #c8d4e8; }
   #whoPanel.on { display: block; }
@@ -341,7 +344,7 @@
 // Birth and death details come live from Wikidata, so they are sourced, not typed in.
 window.WeftWho = (() => {
   const M = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-  let D = null, onJump = () => {}, onPerson = () => {}, onClose = () => {};
+  let D = null, onJump = () => {}, onPerson = () => {}, onClose = () => {}, onGlobe = null;
   const lifeCache = new Map();
   const panel = () => document.getElementById('whoPanel');
   const body = () => document.getElementById('whoBody');
@@ -349,7 +352,7 @@ window.WeftWho = (() => {
 
   function init(data, hooks = {}) {
     D = data;
-    onJump = hooks.onJump || onJump; onPerson = hooks.onPerson || onPerson; onClose = hooks.onClose || onClose;
+    onJump = hooks.onJump || onJump; onPerson = hooks.onPerson || onPerson; onClose = hooks.onClose || onClose; onGlobe = hooks.onGlobe || null;
     panel().querySelector('.wp-close').addEventListener('click', close);
     document.addEventListener('keydown', e => { if (e.key === 'Escape' && panel().classList.contains('on')) { e.stopPropagation(); close(); } }, true);
   }
@@ -406,6 +409,73 @@ window.WeftWho = (() => {
     return a;
   }
 
+
+  // ── World outline (Natural Earth, public domain) and small locator globes ──
+  let worldP = null;
+  function world() {
+    if (!worldP) worldP = fetch('weft-world.json', { cache: 'no-cache' }).then(r => r.ok ? r.json() : null).catch(() => null);
+    return worldP;
+  }
+  function drawLocator(cv, lat, lon) {
+    const dpr = Math.min(devicePixelRatio || 1, 2), css = cv.clientWidth || 84;
+    cv.width = css * dpr; cv.height = css * dpr;
+    const g = cv.getContext('2d'); g.scale(dpr, dpr);
+    const R = css / 2 - 2, cx = css / 2, cy = css / 2, rad = Math.PI / 180;
+    const p0 = Math.max(-60, Math.min(60, lat)) * rad, l0 = lon * rad;
+    const sp0 = Math.sin(p0), cp0 = Math.cos(p0);
+    const proj = (lo, la) => {
+      const p = la * rad, l = lo * rad, cp = Math.cos(p), sp = Math.sin(p), cl = Math.cos(l - l0);
+      return [cx + R * cp * Math.sin(l - l0), cy - R * (cp0 * sp - sp0 * cp * cl), sp0 * sp + cp0 * cp * cl > 0];
+    };
+    const grd = g.createRadialGradient(cx - R * 0.3, cy - R * 0.3, R * 0.1, cx, cy, R);
+    grd.addColorStop(0, '#13233d'); grd.addColorStop(1, '#070d18');
+    g.fillStyle = grd; g.beginPath(); g.arc(cx, cy, R, 0, Math.PI * 2); g.fill();
+    g.strokeStyle = 'rgba(92,160,224,0.45)'; g.lineWidth = 1; g.stroke();
+    const lines = (arr, style, w) => {
+      g.strokeStyle = style; g.lineWidth = w; g.beginPath();
+      arr.forEach(a => { let pen = false; for (let i = 0; i < a.length; i += 2) { const [x, y, v] = proj(a[i] / 10, a[i + 1] / 10); if (v) { pen ? g.lineTo(x, y) : g.moveTo(x, y); pen = true; } else pen = false; } });
+      g.stroke();
+    };
+    world().then(w => {
+      if (w) { lines(w.borders, 'rgba(92,160,224,0.22)', 0.6); lines(w.coast, 'rgba(120,180,240,0.85)', 0.9); }
+      const [x, y, v] = proj(lon, lat);
+      if (!v) return;
+      const glow = g.createRadialGradient(x, y, 0, x, y, 10);
+      glow.addColorStop(0, 'rgba(232,200,120,0.9)'); glow.addColorStop(1, 'rgba(232,200,120,0)');
+      g.fillStyle = glow; g.beginPath(); g.arc(x, y, 10, 0, Math.PI * 2); g.fill();
+      g.fillStyle = '#fff3d0'; g.beginPath(); g.arc(x, y, 2.4, 0, Math.PI * 2); g.fill();
+    });
+  }
+  function locator(lat, lon, cls, title) {
+    const cv = document.createElement('canvas'); cv.className = cls; cv.title = title || '';
+    requestAnimationFrame(() => drawLocator(cv, lat, lon));
+    return cv;
+  }
+
+  // ── Event pictures from Wikipedia ──
+  // Uses Wikipedia's own "page image" for the article, at a standard size; falls back to the summary thumbnail as given.
+  const imgCache = new Map();
+  function image(ev) {
+    if (ev.image) return Promise.resolve({ src: ev.image, credit: ev.imageCredit });
+    const m = (ev.wiki || '').match(/\/wiki\/([^#?]+)/); if (!m) return Promise.resolve(null);
+    let title; try { title = decodeURIComponent(m[1]).replace(/_/g, ' '); } catch (e) { title = m[1].replace(/_/g, ' '); }
+    if (imgCache.has(title)) return imgCache.get(title);
+    const p = (async () => {
+      try {
+        const j = await getJSON(`https://en.wikipedia.org/w/api.php?action=query&prop=pageimages&piprop=thumbnail&pithumbsize=960&redirects=1&format=json&origin=*&titles=${encodeURIComponent(title)}`);
+        const pg = j.query && j.query.pages && Object.values(j.query.pages)[0];
+        if (pg && pg.thumbnail && pg.thumbnail.source) return { src: pg.thumbnail.source, credit: 'Wikipedia / Wikimedia Commons' };
+      } catch (e) { /* try the summary instead */ }
+      try {
+        const j = await getJSON(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(title.replace(/ /g, '_'))}`);
+        if (j.thumbnail && j.thumbnail.source) return { src: j.thumbnail.source, credit: 'Wikipedia / Wikimedia Commons' };
+      } catch (e) { /* offline or blocked */ }
+      return null;
+    })();
+    imgCache.set(title, p);
+    return p;
+  }
+
   // ── Lookups in Weft's own data ──
   const evById = id => D.events.find(e => e.id === id);
   const evKey = e => e.year * 10000 + e.month * 100 + e.day;
@@ -423,6 +493,11 @@ window.WeftWho = (() => {
     const ppl = ev.people || [], pk = ev.place, pl = pk && D.places[pk];
     if (!ppl.length && !pl) return;
     const lab = document.createElement('div'); lab.className = 'who-label'; lab.textContent = 'Who & where'; container.appendChild(lab);
+    if (pl && pl.lat != null) {
+      const cv = locator(pl.lat, pl.lon, 'who-globe', onGlobe ? 'Show on the globe' : 'See this place');
+      cv.addEventListener('click', () => onGlobe ? onGlobe(ev) : openPlace(pk));
+      container.appendChild(cv);
+    }
     ppl.forEach(t => {
       const p = D.people[t]; if (!p) return;
       const b = document.createElement('button'); b.className = 'who-chip';
@@ -506,6 +581,7 @@ window.WeftWho = (() => {
       <div class="wp-events" id="wpLives"></div>`;
     const list = body().querySelector('#wpEvents');
     evs.forEach(e => list.appendChild(eventRow(e)));
+    if (pl.lat != null) body().insertBefore(locator(pl.lat, pl.lon, 'wp-globe', pl.name), body().firstChild);
     panel().classList.add('on'); panel().scrollTop = 0;
     onClose();
     // Check the people already looked up this session for births/deaths here
@@ -524,7 +600,7 @@ window.WeftWho = (() => {
     }));
   }
 
-  return { init, renderChips, openPerson, openPlace, close, life, fmtDate, fmtPlace };
+  return { init, renderChips, openPerson, openPlace, close, life, fmtDate, fmtPlace, image, world };
 })();
 </script>
 <!--/WEFT-WHO-->
@@ -723,27 +799,7 @@ function wikiTitleFromUrl(url) {
   const m = (url || '').match(/\/wiki\/([^#?]+)/);
   return m ? m[1] : null;
 }
-async function getWikiImage(ev) {
-  if (ev.image) return { src: ev.image, credit: ev.imageCredit };
-  const title = wikiTitleFromUrl(ev.wiki);
-  if (!title) return null;
-  if (wikiImageCache.has(title)) return wikiImageCache.get(title);
-  let result = null;
-  try {
-    const res = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${title}`);
-    if (res.ok) {
-      const j = await res.json();
-      if (j.thumbnail && j.thumbnail.source) {
-        result = {
-          src: j.thumbnail.source.replace(/\/(\d+)px-/, '/640px-'),
-          credit: 'Wikipedia / Wikimedia Commons'
-        };
-      }
-    }
-  } catch (e) { /* offline or blocked — card shows text only */ }
-  wikiImageCache.set(title, result);
-  return result;
-}
+function getWikiImage(ev) { return WeftWho.image(ev); }
 function prefetchYearImages() {
   const yearAtStart = currentYear;
   const evs = eventsForYear(currentYear);
