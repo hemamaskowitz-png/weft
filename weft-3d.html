@@ -37,6 +37,33 @@
   .ct-chip:hover { border-color: rgba(255,255,255,0.3); }
   .ct-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
   .ct-year { font-family: 'Space Mono', monospace; font-size: 0.55rem; color: var(--dim); }
+  /* NAV SLIDERS — bottom right */
+  #nav { position: fixed; right: 1.2rem; bottom: 1rem; z-index: 6; display: flex; align-items: flex-end; gap: 0.5rem; }
+  .nav-time, .nav-zoom { background: rgba(19,29,46,0.78); border: 1px solid var(--border); border-radius: 14px; backdrop-filter: blur(6px); }
+  .nav-time { display: flex; flex-direction: column; gap: 0.45rem; width: 320px; max-width: 60vw; padding: 0.7rem 1rem 0.85rem; }
+  .nav-zoom { padding: 0.6rem 0.5rem; }
+  .nav-label { display: flex; justify-content: space-between; font-family: 'Space Mono', monospace; font-size: 0.55rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--dim); }
+  .nav-label b { color: var(--bright); font-weight: 700; letter-spacing: 0.05em; }
+  .nav-zoom { display: flex; flex-direction: column; align-items: center; gap: 0.3rem; }
+  .zoom-track { width: 22px; height: 120px; position: relative; }
+  .zoom-track input { position: absolute; width: 120px; left: 50%; top: 50%; transform: translate(-50%, -50%) rotate(-90deg); }
+  .zoom-ico { font-family: 'Space Mono', monospace; font-size: 0.8rem; color: var(--dim); line-height: 1; user-select: none; }
+  #nav input[type=range] { -webkit-appearance: none; appearance: none; height: 4px; border-radius: 2px; background: rgba(255,255,255,0.12); outline: none; cursor: pointer; margin: 0; }
+  #nav input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #c0b0ff, #7a5ce0); box-shadow: 0 0 10px rgba(122,92,224,0.7); border: none; }
+  #nav input[type=range]::-moz-range-thumb { width: 16px; height: 16px; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #c0b0ff, #7a5ce0); box-shadow: 0 0 10px rgba(122,92,224,0.7); border: none; }
+  @media (max-width: 600px) {
+    #nav { right: 0.6rem; bottom: 0.6rem; left: 0.6rem; justify-content: flex-end; }
+    .nav-time { flex: 1; max-width: none; width: auto; }
+    .zoom-track { height: 90px; } .zoom-track input { width: 90px; }
+    #help { display: none; }
+    #hud { flex-direction: column; align-items: stretch; gap: 0.5rem; padding: 0.7rem 0.6rem; }
+    .hud-sub { display: none; }
+    .era-bar { overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
+    .era-bar::-webkit-scrollbar { display: none; }
+    .era-btn, .hud-link { flex-shrink: 0; padding: 0.45rem 0.7rem; }
+    #card { top: auto; bottom: 150px; right: 0.6rem; left: 0.6rem; width: auto; max-height: 50vh; }
+  }
+
   #loading { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; background: var(--bg); z-index: 20; font-family: 'Space Mono', monospace; letter-spacing: 0.15em; color: var(--bright); transition: opacity 0.4s; }
   #loading.off { opacity: 0; pointer-events: none; }
 </style>
@@ -49,12 +76,26 @@
   <div class="era-bar">
     <button class="era-btn" data-era="1492">1492</button>
     <button class="era-btn" data-era="1776">1776</button>
+    <button class="era-btn" data-era="1914">1914</button>
+    <button class="era-btn" data-era="1970s">1970s</button>
     <button class="era-btn active" data-era="1980s">1980s</button>
+    <button class="era-btn" data-era="1990s">1990s</button>
     <a class="hud-link" href="index.html">2D &rarr;</a>
   </div>
 </div>
 <div id="help">click an event for its story &middot; bright strands are threads</div>
 <div id="tip"><div class="tip-t"></div><div class="tip-d"></div></div>
+<div id="nav">
+  <div class="nav-time">
+    <div class="nav-label"><span id="timeStart">—</span><b id="timeNow">—</b><span id="timeEnd">—</span></div>
+    <input type="range" id="timeSlider" min="0" max="1000" value="500" aria-label="Move through time">
+  </div>
+  <div class="nav-zoom">
+    <span class="zoom-ico">+</span>
+    <div class="zoom-track"><input type="range" id="zoomSlider" min="0" max="1000" value="400" aria-label="Zoom"></div>
+    <span class="zoom-ico">&minus;</span>
+  </div>
+</div>
 <div id="card">
   <button class="card-close" id="cardClose">&#10005;</button>
   <div class="card-dom"><span id="cDomIcon"></span><span id="cDomLabel"></span></div>
@@ -80,7 +121,7 @@ const GROUPS = [
   { name: 'ARTS',           keys: ['visualart','theatre','music','film','literature','architecture','fashion'] },
   { name: 'LIFE',           keys: ['food','religion','sport','people','society'] },
 ];
-const ERAS = { '1492': [1492,1492], '1776': [1776,1776], '1980s': [1980,1989] };
+const ERAS = { '1492': [1492,1492], '1776': [1776,1776], '1914': [1914,1914], '1970s': [1970,1979], '1980s': [1980,1989], '1990s': [1990,1999] };
 
 let DOMAINS = {}, ALL_EVENTS = [], THREAD_MAP = new Map();
 let era = '1980s';
@@ -135,8 +176,11 @@ function textSprite(text, { size = 26, color = '#c8d4e8', mono = false } = {}) {
 }
 
 // Layout constants
-const LANE_GAP = 7, GROUP_GAP = 34;
+const LANE_Z = 9, GROUP_EXTRA = 7, STAGGER = 17;
+const DEPTH = 24 * LANE_Z + 4 * GROUP_EXTRA;
 let MONTH_W = 9; // set per era in build()
+let halos = [];
+function seeded(n) { const x = Math.sin(n * 12.9898) * 43758.5453; return x - Math.floor(x); }
 
 let pickables = [], currentFocusId = null;
 
@@ -157,52 +201,60 @@ function build() {
   const xL = -total / 2, xR = total / 2;
   const posById = new Map();
 
+  halos = [];
+  let laneIdx = 0;
   GROUPS.forEach((grp, gi) => {
-    const z = -gi * GROUP_GAP;
-    const gh = (grp.keys.length - 1) * LANE_GAP;
-    // group label
-    const gl = textSprite(grp.name, { size: 30, color: '#8a9ab8', mono: true });
-    gl.position.set(xL - 14, gh / 2 + 12, z);
-    world.add(gl);
-
     grp.keys.forEach((key, li) => {
-      const d = DOMAINS[key]; if (!d) return;
-      const y = gh / 2 - li * LANE_GAP;
+      const d = DOMAINS[key]; if (!d) { laneIdx++; return; }
+      // Each lane gets its own depth; groups keep their front-to-back order with a small extra gap.
+      const z = -(laneIdx * LANE_Z + gi * GROUP_EXTRA);
+      // Staggered height: a non-repeating wave so neighbouring lanes never sit in a flat sheet.
+      const y = Math.sin(laneIdx * 2.39996) * STAGGER + Math.cos(laneIdx * 0.9) * (STAGGER * 0.35);
       const col = new THREE.Color(d.color);
-      // lane line
+
+      if (li === 0) {
+        const gl = textSprite(grp.name, { size: 30, color: '#8a9ab8', mono: true });
+        gl.position.set(xL - 16, y + 11, z);
+        world.add(gl);
+      }
+      // faint lane strand
       const lg = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(xL, y, z), new THREE.Vector3(xR, y, z)]);
-      world.add(new THREE.Line(lg, new THREE.LineBasicMaterial({ color: col, transparent: true, opacity: 0.28 })));
+      world.add(new THREE.Line(lg, new THREE.LineBasicMaterial({ color: col, transparent: true, opacity: 0.12 })));
       // lane label
       const ll = textSprite(d.label, { size: 20, color: d.color });
       ll.position.set(xL - 4 - ll.scale.x / 2, y + 2.2, z);
       world.add(ll);
-      // events
+      // events, scattered slightly off the strand like stars around a filament
       events.filter(e => e.domain === key).forEach(ev => {
         const x = dateX(ev.year, ev.month, ev.day, y0, y1);
+        const jy = (seeded(ev.id) - 0.5) * 4.5;
+        const jz = (seeded(ev.id * 7 + 3) - 0.5) * 6;
+        const r = 1.0 + seeded(ev.id * 13 + 1) * 0.7;
         const mesh = new THREE.Mesh(
-          new THREE.SphereGeometry(1.35, 20, 14),
+          new THREE.SphereGeometry(r, 18, 12),
           new THREE.MeshBasicMaterial({ color: col })
         );
-        mesh.position.set(x, y, z);
+        mesh.position.set(x, y + jy, z + jz);
         mesh.userData.ev = ev;
         world.add(mesh);
         pickables.push(mesh);
-        // soft halo
         const halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: haloTex, color: col, transparent: true, opacity: 0.35, depthWrite: false }));
-        halo.scale.set(7, 7, 1);
+        halo.scale.set(7 * r, 7 * r, 1);
         halo.position.copy(mesh.position);
+        halo.userData.phase = seeded(ev.id * 31) * Math.PI * 2;
         world.add(halo);
+        halos.push(halo);
         posById.set(ev.id, mesh.position.clone());
       });
+      laneIdx++;
     });
   });
 
-  // year/month markers along the front
-  const frontZ = 10;
+  // year markers floating in front of the cloud
   for (let yr = y0; yr <= y1; yr++) {
     const yx = dateX(yr, 1, 1, y0, y1);
     const yl = textSprite(String(yr), { size: 22, color: '#5a6a80', mono: true });
-    yl.position.set(yx + (6 * MONTH_W), -((GROUPS[0].keys.length - 1) * LANE_GAP) / 2 - 10, 0);
+    yl.position.set(yx + (6 * MONTH_W), -STAGGER - 14, 12);
     world.add(yl);
   }
 
@@ -320,11 +372,74 @@ function setEra(e) {
   era = e;
   document.querySelectorAll('.era-btn').forEach(b => b.classList.toggle('active', b.dataset.era === e));
   build();
-  controls.target.set(0, 0, -GROUP_GAP * 1.6);
-  camera.position.set(40, 120, 330);
+  // Frame the whole era: pull back far enough that its full width fits the screen
+  const [a0, a1] = ERAS[e];
+  const halfW = ((a1 - a0 + 1) * 12 * MONTH_W) / 2 + 70;
+  const fit = halfW / (Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * Math.max(camera.aspect, 0.6));
+  const dist = fit + DEPTH / 2; // measured from the cloud's centre, so the front layer fits too
+  controls.target.set(0, 0, -DEPTH / 2);
+  camera.position.set(dist * 0.18, dist * 0.3, -DEPTH / 2 + dist);
   card.classList.remove('on');
 }
 document.querySelectorAll('.era-btn').forEach(b => b.addEventListener('click', () => setEra(b.dataset.era)));
+
+// ── SLIDERS ────────────────────────────────────────────────────────────────────
+const timeSlider = document.getElementById('timeSlider');
+const zoomSlider = document.getElementById('zoomSlider');
+const SHORT_M = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+let draggingTime = false, draggingZoom = false;
+
+function eraBounds() {
+  const [y0, y1] = ERAS[era];
+  const total = (y1 - y0 + 1) * 12 * MONTH_W;
+  return { y0, y1, xL: -total / 2, xR: total / 2 };
+}
+function xToLabel(x) {
+  const { y0, y1, xL } = eraBounds();
+  const months = Math.max(0, Math.min((y1 - y0 + 1) * 12 - 1, Math.floor((x - xL) / MONTH_W)));
+  return `${SHORT_M[months % 12]} ${y0 + Math.floor(months / 12)}`;
+}
+// Zoom: logarithmic, top of the slider = closest
+function zoomToDist(v) {
+  const mn = controls.minDistance, mx = controls.maxDistance;
+  return mn * Math.pow(mx / mn, 1 - v / 1000);
+}
+function distToZoom(d) {
+  const mn = controls.minDistance, mx = controls.maxDistance;
+  return (1 - Math.log(d / mn) / Math.log(mx / mn)) * 1000;
+}
+
+timeSlider.addEventListener('pointerdown', () => draggingTime = true);
+timeSlider.addEventListener('pointerup', () => draggingTime = false);
+timeSlider.addEventListener('input', () => {
+  const { xL, xR } = eraBounds();
+  const x = xL + (xR - xL) * (timeSlider.value / 1000);
+  const dx = x - controls.target.x;
+  controls.target.x += dx;
+  camera.position.x += dx;
+  document.getElementById('timeNow').textContent = xToLabel(x);
+});
+zoomSlider.addEventListener('pointerdown', () => draggingZoom = true);
+zoomSlider.addEventListener('pointerup', () => draggingZoom = false);
+zoomSlider.addEventListener('input', () => {
+  const dir = camera.position.clone().sub(controls.target).normalize();
+  camera.position.copy(controls.target).add(dir.multiplyScalar(zoomToDist(+zoomSlider.value)));
+});
+
+addEventListener('pointerup', () => { draggingTime = false; draggingZoom = false; });
+addEventListener('pointercancel', () => { draggingTime = false; draggingZoom = false; });
+
+function syncSliders() {
+  const { y0, y1, xL, xR } = eraBounds();
+  document.getElementById('timeStart').textContent = y0;
+  document.getElementById('timeEnd').textContent = y1;
+  if (!draggingTime) {
+    const t = (controls.target.x - xL) / (xR - xL);
+    timeSlider.value = Math.max(0, Math.min(1000, t * 1000));
+    document.getElementById('timeNow').textContent = xToLabel(Math.max(xL, Math.min(xR, controls.target.x)));
+  }
+  if (!draggingZoom) zoomSlider.value = distToZoom(camera.position.distanceTo(controls.target));
+}
 
 // ── RESIZE / LOOP ──────────────────────────────────────────────────────────────
 function resize() {
@@ -335,8 +450,11 @@ function resize() {
 addEventListener('resize', resize);
 resize();
 
-function loop() {
+function loop(t = 0) {
+  const s = t * 0.0012;
+  for (const h of halos) h.material.opacity = 0.22 + 0.16 * Math.sin(s + h.userData.phase);
   controls.update();
+  syncSliders();
   updateHover();
   renderer.render(scene, camera);
   requestAnimationFrame(loop);
