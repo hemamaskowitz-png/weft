@@ -140,7 +140,7 @@
   .modal-links { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 1rem; }
   .modal-link { font-family: 'Space Mono', monospace; font-size: 0.65rem; padding: 0.4rem 0.75rem; border-radius: 6px; border: 1px solid; text-decoration: none; transition: opacity 0.15s; }
   .modal-link:active { opacity: 0.7; }
-  .modal-nav { display: flex; align-items: center; justify-content: space-between; padding: 0.5rem 1rem; border-top: 1px solid var(--border); }
+  .modal-nav { position: sticky; top: 0; z-index: 3; background: var(--bg-card); display: flex; align-items: center; justify-content: space-between; padding: 0.5rem 1rem; border-top: 1px solid var(--border); }
   .modal-nav-btn { background: rgba(255,255,255,0.05); border: 1px solid var(--border); color: var(--text-dim); width: var(--tap); height: var(--tap); border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1rem; touch-action: manipulation; }
   .modal-nav-btn:disabled { opacity: 0.2; cursor: default; }
   .modal-close { background: none; border: none; color: var(--text-dim); font-size: 1.3rem; cursor: pointer; padding: 0.5rem; touch-action: manipulation; }
