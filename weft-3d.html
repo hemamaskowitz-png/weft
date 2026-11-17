@@ -788,7 +788,7 @@ function loop(t = 0) {
 // ── DATA ───────────────────────────────────────────────────────────────────────
 (async () => {
   try {
-    const res = await fetch('weft-data.json');
+    const res = await fetch('weft-data.json', { cache: 'no-cache' });
     const data = await res.json();
     DOMAINS = data.domains;
     ALL_EVENTS = data.events;

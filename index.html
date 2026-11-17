@@ -288,11 +288,246 @@
       <div class="modal-text" id="modalText"></div>
       <div class="modal-links" id="modalLinks"></div>
       <div class="modal-threads" id="modalThreads"></div>
+      <div class="who-row" id="modalWho"></div>
     </div>
   </div>
 </div>
 
 <div id="tooltip"><div class="tip-title"></div><div class="tip-date"></div></div>
+
+<!--WEFT-WHO-->
+<style>
+  /* People & places — shared by 2D and 3D */
+  .who-row { margin-top: 0.9rem; display: flex; flex-wrap: wrap; gap: 0.35rem; align-items: center; }
+  .who-label { width: 100%; font-family: 'Space Mono', monospace; font-size: 0.55rem; letter-spacing: 0.12em; text-transform: uppercase; color: #5a6a80; }
+  .who-chip { display: inline-flex; align-items: center; gap: 0.35rem; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); color: #c8d4e8; font-size: 0.68rem; padding: 0.3rem 0.6rem; border-radius: 14px; cursor: pointer; font-family: 'Space Grotesk', system-ui, sans-serif; text-align: left; transition: border-color 0.15s, background 0.15s; }
+  .who-chip:hover { border-color: rgba(232,200,120,0.6); background: rgba(232,200,120,0.08); }
+  .who-chip .wi { font-size: 0.75rem; line-height: 1; }
+  .who-chip.place { border-style: dashed; }
+
+  #whoPanel { position: fixed; top: 70px; left: 1rem; width: 350px; max-width: calc(100vw - 2rem); max-height: calc(100vh - 100px); overflow-y: auto; z-index: 300; background: rgba(15,22,36,0.97); border: 1px solid rgba(232,200,120,0.28); border-radius: 16px; padding: 1.1rem 1.2rem 1.2rem; display: none; box-shadow: 0 12px 48px rgba(0,0,0,0.6); backdrop-filter: blur(8px); font-family: 'Space Grotesk', system-ui, sans-serif; color: #c8d4e8; }
+  #whoPanel.on { display: block; }
+  #whoPanel .wp-close { position: absolute; top: 0.55rem; right: 0.75rem; background: none; border: none; color: #5a6a80; font-size: 1.1rem; cursor: pointer; }
+  #whoPanel .wp-close:hover { color: #e8f0ff; }
+  .wp-kind { font-family: 'Space Mono', monospace; font-size: 0.55rem; letter-spacing: 0.14em; text-transform: uppercase; color: #e8c878; margin-bottom: 0.35rem; }
+  .wp-name { font-size: 1.25rem; font-weight: 600; color: #e8f0ff; line-height: 1.2; padding-right: 1.2rem; }
+  .wp-desc { font-size: 0.8rem; color: #8a9ab8; margin-top: 0.3rem; line-height: 1.45; }
+  .wp-life { margin-top: 0.9rem; display: grid; grid-template-columns: auto 1fr; gap: 0.45rem 0.7rem; align-items: start; }
+  .wp-life .k { font-family: 'Space Mono', monospace; font-size: 0.55rem; letter-spacing: 0.1em; text-transform: uppercase; color: #5a6a80; padding-top: 0.15rem; }
+  .wp-life .v { font-size: 0.8rem; line-height: 1.4; }
+  .wp-life .v small { display: block; color: #8a9ab8; font-size: 0.7rem; }
+  .wp-life .v button { background: none; border: none; padding: 0; color: #e8c878; font: inherit; cursor: pointer; text-decoration: underline; text-decoration-color: rgba(232,200,120,0.35); text-underline-offset: 2px; }
+  .wp-loading { font-family: 'Space Mono', monospace; font-size: 0.6rem; color: #5a6a80; margin-top: 0.9rem; }
+  .wp-bar { position: relative; height: 4px; border-radius: 2px; background: rgba(255,255,255,0.07); margin: 0.9rem 0 0.2rem; }
+  .wp-bar .span { position: absolute; top: 0; bottom: 0; border-radius: 2px; background: linear-gradient(90deg, #e8c878, #c8a05c); }
+  .wp-bar .tick { position: absolute; top: -3px; width: 2px; height: 10px; background: #e8f0ff; border-radius: 1px; }
+  .wp-bar-l { display: flex; justify-content: space-between; font-family: 'Space Mono', monospace; font-size: 0.52rem; color: #5a6a80; }
+  .wp-sec { margin-top: 1rem; font-family: 'Space Mono', monospace; font-size: 0.55rem; letter-spacing: 0.12em; text-transform: uppercase; color: #5a6a80; }
+  .wp-events { margin-top: 0.45rem; display: flex; flex-direction: column; gap: 0.3rem; }
+  .wp-ev { display: grid; grid-template-columns: 10px 1fr auto; gap: 0.55rem; align-items: center; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 9px; padding: 0.45rem 0.6rem; cursor: pointer; text-align: left; color: #c8d4e8; font: inherit; font-size: 0.74rem; }
+  .wp-ev:hover { border-color: rgba(255,255,255,0.25); }
+  .wp-ev .d { width: 8px; height: 8px; border-radius: 50%; }
+  .wp-ev .y { font-family: 'Space Mono', monospace; font-size: 0.58rem; color: #5a6a80; }
+  .wp-ev.life { cursor: default; border-style: dashed; color: #e8c878; }
+  .wp-link { display: inline-block; margin-top: 1rem; font-family: 'Space Mono', monospace; font-size: 0.6rem; padding: 0.35rem 0.7rem; border: 1px solid rgba(232,200,120,0.35); color: #e8c878; border-radius: 6px; text-decoration: none; }
+  .wp-note { margin-top: 0.8rem; font-size: 0.62rem; color: #5a6a80; line-height: 1.4; }
+  @media (max-width: 700px) {
+    #whoPanel { top: auto; bottom: 0; left: 0; right: 0; width: auto; max-width: none; max-height: 72vh; border-radius: 18px 18px 0 0; }
+  }
+</style>
+<div id="whoPanel" role="dialog" aria-label="Person or place"><button class="wp-close" aria-label="Close">&#10005;</button><div id="whoBody"></div></div>
+<script>
+// ── WEFT WHO: people & places ─────────────────────────────────────────────────
+// Birth and death details come live from Wikidata, so they are sourced, not typed in.
+window.WeftWho = (() => {
+  const M = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  let D = null, onJump = () => {}, onPerson = () => {}, onClose = () => {};
+  const lifeCache = new Map();
+  const panel = () => document.getElementById('whoPanel');
+  const body = () => document.getElementById('whoBody');
+  const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+  function init(data, hooks = {}) {
+    D = data;
+    onJump = hooks.onJump || onJump; onPerson = hooks.onPerson || onPerson; onClose = hooks.onClose || onClose;
+    panel().querySelector('.wp-close').addEventListener('click', close);
+    document.addEventListener('keydown', e => { if (e.key === 'Escape' && panel().classList.contains('on')) { e.stopPropagation(); close(); } }, true);
+  }
+  function close() { panel().classList.remove('on'); onClose(); }
+
+  // ── Wikidata ──
+  async function getJSON(url) { const r = await fetch(url); if (!r.ok) throw new Error(r.status); return r.json(); }
+  function claim(ent, p) {
+    const c = ent && ent.claims && ent.claims[p]; if (!c || !c.length) return null;
+    const best = c.find(x => x.rank === 'preferred') || c.find(x => x.rank !== 'deprecated') || c[0];
+    return best.mainsnak && best.mainsnak.datavalue ? best.mainsnak.datavalue.value : null;
+  }
+  function parseTime(v) {
+    if (!v || !v.time) return null;
+    const m = v.time.match(/^([+-])(\d+)-(\d\d)-(\d\d)/); if (!m) return null;
+    const year = (m[1] === '-' ? -1 : 1) * parseInt(m[2], 10);
+    return { year, month: v.precision >= 10 && +m[3] ? +m[3] : null, day: v.precision >= 11 && +m[4] ? +m[4] : null };
+  }
+  async function lookup(title) {
+    const pp = await getJSON(`https://en.wikipedia.org/w/api.php?action=query&prop=pageprops&ppprop=wikibase_item&redirects=1&format=json&origin=*&titles=${encodeURIComponent(title.replace(/_/g, ' '))}`);
+    const pg = pp.query && pp.query.pages && Object.values(pp.query.pages)[0];
+    const qid = pg && pg.pageprops && pg.pageprops.wikibase_item; if (!qid) return null;
+    const ent = (await getJSON(`https://www.wikidata.org/w/api.php?action=wbgetentities&ids=${qid}&props=claims&format=json&origin=*`)).entities[qid];
+    const born = parseTime(claim(ent, 'P569')), died = parseTime(claim(ent, 'P570'));
+    const bp = claim(ent, 'P19'), dp = claim(ent, 'P20');
+    const ids = [...new Set([bp && bp.id, dp && dp.id].filter(Boolean))];
+    const pl = {};
+    if (ids.length) {
+      const pe = (await getJSON(`https://www.wikidata.org/w/api.php?action=wbgetentities&ids=${ids.join('|')}&props=labels|claims&languages=en&format=json&origin=*`)).entities;
+      const cids = new Set();
+      for (const [id, e] of Object.entries(pe)) {
+        const co = claim(e, 'P625'), ct = claim(e, 'P17');
+        pl[id] = { name: e.labels && e.labels.en ? e.labels.en.value : null, lat: co ? co.latitude : null, lon: co ? co.longitude : null, countryId: ct ? ct.id : null };
+        if (ct && ct.id !== id) cids.add(ct.id);
+      }
+      if (cids.size) {
+        const ce = (await getJSON(`https://www.wikidata.org/w/api.php?action=wbgetentities&ids=${[...cids].join('|')}&props=labels&languages=en&format=json&origin=*`)).entities;
+        Object.values(pl).forEach(p => { if (p.countryId && ce[p.countryId] && ce[p.countryId].labels.en) p.country = ce[p.countryId].labels.en.value; });
+      }
+    }
+    return { qid, born: born && { ...born, place: bp ? pl[bp.id] : null }, died: died && { ...died, place: dp ? pl[dp.id] : null } };
+  }
+  function life(title) {
+    if (!lifeCache.has(title)) lifeCache.set(title, lookup(title).catch(() => null));
+    return lifeCache.get(title);
+  }
+  function fmtDate(d) { if (!d) return ''; const y = d.year < 0 ? `${-d.year} BC` : d.year; return [d.day, d.month ? M[d.month - 1] : null, y].filter(Boolean).join(' '); }
+  function fmtPlace(p) { if (!p || !p.name) return ''; return p.country && p.country !== p.name ? `${p.name}, ${p.country}` : p.name; }
+  function ageAt(b, d) {
+    if (!b) return null;
+    const now = new Date(), e = d || { year: now.getFullYear(), month: now.getMonth() + 1, day: now.getDate() };
+    let a = e.year - b.year;
+    if (b.month && e.month && (e.month < b.month || (e.month === b.month && b.day && e.day && e.day < b.day))) a--;
+    return a;
+  }
+
+  // ── Lookups in Weft's own data ──
+  const evById = id => D.events.find(e => e.id === id);
+  const evKey = e => e.year * 10000 + e.month * 100 + e.day;
+  function eventsWithPerson(t) { return D.events.filter(e => (e.people || []).includes(t)).sort((a, b) => evKey(a) - evKey(b)); }
+  function eventsAtPlace(k) { return D.events.filter(e => e.place === k).sort((a, b) => evKey(a) - evKey(b)); }
+  function placeKeyByName(name) {
+    if (!name) return null;
+    const n = name.toLowerCase();
+    return Object.keys(D.places).find(k => { const pn = D.places[k].name.toLowerCase(); return pn === n || pn.split(/[ ,(]/)[0] === n; }) || null;
+  }
+
+  // ── Chips on an event card ──
+  function renderChips(container, ev) {
+    container.innerHTML = '';
+    const ppl = ev.people || [], pk = ev.place, pl = pk && D.places[pk];
+    if (!ppl.length && !pl) return;
+    const lab = document.createElement('div'); lab.className = 'who-label'; lab.textContent = 'Who & where'; container.appendChild(lab);
+    ppl.forEach(t => {
+      const p = D.people[t]; if (!p) return;
+      const b = document.createElement('button'); b.className = 'who-chip';
+      b.innerHTML = `<span class="wi">&#128100;</span><span>${esc(p.name)}</span>`;
+      b.addEventListener('click', () => openPerson(t));
+      container.appendChild(b);
+    });
+    if (pl) {
+      const b = document.createElement('button'); b.className = 'who-chip place';
+      b.innerHTML = `<span class="wi">&#128205;</span><span>${esc(pl.name)}</span>`;
+      b.addEventListener('click', () => openPlace(pk));
+      container.appendChild(b);
+    }
+  }
+
+  function eventRow(e) {
+    const d = D.domains[e.domain] || { color: '#888' };
+    const b = document.createElement('button'); b.className = 'wp-ev';
+    b.innerHTML = `<span class="d" style="background:${d.color}"></span><span>${esc(e.title)}</span><span class="y">${e.year}</span>`;
+    b.addEventListener('click', () => onJump(e.id));
+    return b;
+  }
+
+  // ── Person panel ──
+  function openPerson(t) {
+    const p = D.people[t]; if (!p) return;
+    const evs = eventsWithPerson(t);
+    body().innerHTML = `
+      <div class="wp-kind">Person</div>
+      <div class="wp-name">${esc(p.name)}</div>
+      <div class="wp-desc">${esc(p.desc)}</div>
+      <div class="wp-loading" id="wpLife">Looking up birth and death on Wikidata&hellip;</div>
+      <div class="wp-sec">In Weft &middot; ${evs.length} event${evs.length === 1 ? '' : 's'}</div>
+      <div class="wp-events" id="wpEvents"></div>
+      <a class="wp-link" href="${esc(p.wiki)}" target="_blank" rel="noopener">&rarr; Wikipedia</a>`;
+    const list = body().querySelector('#wpEvents');
+    evs.forEach(e => list.appendChild(eventRow(e)));
+    panel().classList.add('on'); panel().scrollTop = 0;
+    onPerson(t, null, evs);
+    life(t).then(L => {
+      const slot = body().querySelector('#wpLife');
+      if (!slot || body().querySelector('.wp-name').textContent !== p.name) return;
+      if (!L || (!L.born && !L.died)) { slot.textContent = 'Birth and death details unavailable right now.'; onPerson(t, null, evs); return; }
+      const row = (k, d, extra) => {
+        const pkey = d.place && placeKeyByName(d.place.name);
+        const placeHtml = d.place && d.place.name ? (pkey ? `<button data-pk="${pkey}">${esc(fmtPlace(d.place))}</button>` : esc(fmtPlace(d.place))) : '<span style="color:#5a6a80">place not recorded</span>';
+        return `<div class="k">${k}</div><div class="v">${esc(fmtDate(d))}${extra ? ` <small>${extra}</small>` : ''}<small>${placeHtml}</small></div>`;
+      };
+      const a = ageAt(L.born, L.died);
+      let html = '<div class="wp-life">';
+      if (L.born) html += row('Born', L.born, '');
+      if (L.died) html += row('Died', L.died, a != null ? `aged ${a}` : '');
+      else if (L.born && a != null && a < 125) html += `<div class="k">Now</div><div class="v">${a} years old</div>`;
+      html += '</div>';
+      // life bar with Weft events as ticks
+      if (L.born) {
+        const y0 = L.born.year, y1 = L.died ? L.died.year : new Date().getFullYear();
+        const span = Math.max(1, y1 - y0);
+        const ticks = evs.filter(e => e.year >= y0 && e.year <= y1).map(e => `<span class="tick" title="${esc(e.title)}" style="left:${((e.year - y0) / span * 100).toFixed(1)}%"></span>`).join('');
+        html += `<div class="wp-bar"><span class="span" style="left:0;right:0"></span>${ticks}</div><div class="wp-bar-l"><span>${y0 < 0 ? -y0 + ' BC' : y0}</span><span>${L.died ? y1 : 'today'}</span></div>`;
+      }
+      slot.outerHTML = html + '<div class="wp-note">Birth and death details from Wikidata.</div>';
+      body().querySelectorAll('[data-pk]').forEach(b => b.addEventListener('click', () => openPlace(b.dataset.pk)));
+      onPerson(t, L, evs);
+    });
+  }
+
+  // ── Place panel ──
+  function openPlace(k) {
+    const pl = D.places[k]; if (!pl) return;
+    const evs = eventsAtPlace(k);
+    const coords = pl.lat != null ? `${Math.abs(pl.lat).toFixed(2)}&deg;${pl.lat >= 0 ? 'N' : 'S'}, ${Math.abs(pl.lon).toFixed(2)}&deg;${pl.lon >= 0 ? 'E' : 'W'}` : '';
+    // People in Weft who were born or died here (from what we've already looked up)
+    body().innerHTML = `
+      <div class="wp-kind">Place</div>
+      <div class="wp-name">${esc(pl.name)}</div>
+      <div class="wp-desc">${esc(pl.country !== '—' ? pl.country : '')}${coords ? ` &middot; ${coords}` : ''}</div>
+      <div class="wp-sec">Happened here &middot; ${evs.length} event${evs.length === 1 ? '' : 's'}</div>
+      <div class="wp-events" id="wpEvents"></div>
+      <div class="wp-sec" id="wpLivesH" style="display:none">Lives that began or ended here</div>
+      <div class="wp-events" id="wpLives"></div>`;
+    const list = body().querySelector('#wpEvents');
+    evs.forEach(e => list.appendChild(eventRow(e)));
+    panel().classList.add('on'); panel().scrollTop = 0;
+    onClose();
+    // Check the people already looked up this session for births/deaths here
+    const lives = body().querySelector('#wpLives');
+    lifeCache.forEach((prom, t) => prom.then(L => {
+      if (!L || !body().querySelector('#wpLives')) return;
+      [['born', L.born], ['died', L.died]].forEach(([kind, d]) => {
+        if (d && d.place && placeKeyByName(d.place.name) === k) {
+          body().querySelector('#wpLivesH').style.display = '';
+          const b = document.createElement('button'); b.className = 'wp-ev';
+          b.innerHTML = `<span class="d" style="background:#e8c878"></span><span>${esc(D.people[t].name)} ${kind} here</span><span class="y">${d.year}</span>`;
+          b.addEventListener('click', () => openPerson(t));
+          lives.appendChild(b);
+        }
+      });
+    }));
+  }
+
+  return { init, renderChips, openPerson, openPlace, close, life, fmtDate, fmtPlace };
+})();
+</script>
+<!--/WEFT-WHO-->
 
 <script>
 // DATA — loaded from weft-data.json
@@ -316,7 +551,7 @@ async function loadData() {
 
   for (const url of candidates) {
     try {
-      const res = await fetch(url);
+      const res = await fetch(url, { cache: 'no-cache' });
       if (res.ok) { data = await res.json(); break; }
     } catch(e) { /* try next */ }
   }
@@ -331,6 +566,7 @@ async function loadData() {
 
   DOMAINS = data.domains;
   ALL_EVENTS = data.events;
+  WeftWho.init(data, { onJump: id => { if (innerWidth < 700) WeftWho.close(); jumpToEvent(id); } });
 
   // Build bidirectional thread map
   THREAD_MAP = new Map();
@@ -764,6 +1000,7 @@ function renderModal() {
       thEl.appendChild(chip);
     });
   }
+  WeftWho.renderChips(document.getElementById('modalWho'), ev);
 
   const vis = visibleEvents(), idx = vis.findIndex(e => e.id === currentEventId);
   document.getElementById('navPrev').disabled = idx <= 0;
