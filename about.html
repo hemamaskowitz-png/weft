@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en-ZA">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>About Weft</title>
+<meta name="description" content="Weft weaves world history into one fabric: events, people, places, and the art and books made in response.">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600&family=Space+Mono:wght@400;700&display=swap');
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #080c14; --bg-panel: #0e1520; --bg-card: #131d2e;
+    --border: rgba(255,255,255,0.08); --text: #c8d4e8;
+    --text-dim: #5a6a80; --text-mid: #8a9ab8; --text-bright: #e8f0ff; --gold: #e8c878;
+  }
+  html { background: var(--bg); }
+  body { background: var(--bg); color: var(--text); font-family: 'Space Grotesk', system-ui, sans-serif; line-height: 1.65; -webkit-font-smoothing: antialiased; }
+  a { color: var(--gold); text-decoration: none; border-bottom: 1px solid rgba(232,200,120,0.35); }
+  a:hover { border-bottom-color: var(--gold); }
+
+  .top { position: sticky; top: 0; z-index: 5; display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 0.8rem 1.25rem; background: rgba(8,12,20,0.88); backdrop-filter: blur(8px); border-bottom: 1px solid var(--border); }
+  .brand { font-family: 'Space Mono', monospace; letter-spacing: 0.2em; color: var(--text-bright); font-size: 0.95rem; border: none; }
+  .nav { display: flex; gap: 0.4rem; }
+  .nav a { font-family: 'Space Mono', monospace; font-size: 0.66rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text); border: 1px solid var(--border); border-radius: 8px; padding: 0.45rem 0.7rem; }
+  .nav a:hover { border-color: rgba(232,200,120,0.5); color: var(--text-bright); }
+
+  .hero { position: relative; max-width: 980px; margin: 0 auto; padding: 3.5rem 1.25rem 1rem; }
+  .eyebrow { font-family: 'Space Mono', monospace; font-size: 0.68rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--gold); }
+  h1 { font-size: clamp(2.2rem, 7vw, 4rem); line-height: 1.05; font-weight: 600; color: var(--text-bright); margin-top: 0.6rem; letter-spacing: -0.02em; }
+  .lede { font-size: clamp(1.05rem, 2.4vw, 1.25rem); color: var(--text); max-width: 40rem; margin-top: 1.1rem; }
+
+  .loom { display: block; width: 100%; height: auto; margin: 2.2rem 0 0.4rem; }
+  .loom-cap { font-family: 'Space Mono', monospace; font-size: 0.62rem; color: var(--text-dim); display: flex; gap: 1.2rem; flex-wrap: wrap; }
+  .loom-cap span::before { content: ''; display: inline-block; width: 16px; height: 2px; vertical-align: middle; margin-right: 0.4rem; background: var(--c); }
+
+  main { max-width: 980px; margin: 0 auto; padding: 0 1.25rem 4rem; }
+  section { padding: 2.6rem 0 0.4rem; border-top: 1px solid var(--border); margin-top: 2.4rem; }
+  h2 { font-family: 'Space Mono', monospace; font-size: 0.72rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--gold); font-weight: 400; margin-bottom: 1rem; }
+  h3 { font-size: 1.05rem; color: var(--text-bright); font-weight: 600; margin: 1.4rem 0 0.35rem; }
+  p { max-width: 42rem; margin-bottom: 0.9rem; }
+  .big { font-size: 1.12rem; color: var(--text-bright); }
+
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 0.8rem; margin: 1.2rem 0 1.4rem; }
+  .stat { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 0.9rem 1rem; }
+  .stat b { display: block; font-size: 1.8rem; font-weight: 600; color: var(--text-bright); line-height: 1.1; font-variant-numeric: tabular-nums; }
+  .stat span { font-family: 'Space Mono', monospace; font-size: 0.6rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-dim); }
+
+  .lanes { display: flex; flex-wrap: wrap; gap: 0.35rem; margin: 0.6rem 0 1.2rem; }
+  .lane { display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.74rem; padding: 0.28rem 0.6rem; border-radius: 14px; border: 1px solid var(--border); background: rgba(255,255,255,0.03); }
+  .lane i { width: 8px; height: 8px; border-radius: 50%; }
+
+  .how { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.8rem; margin-top: 1rem; }
+  .card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 14px; padding: 1rem 1.1rem; }
+  .card h3 { margin-top: 0; font-size: 0.98rem; }
+  .card p { font-size: 0.9rem; color: var(--text-mid); margin: 0; }
+  .card .k { font-family: 'Space Mono', monospace; font-size: 0.6rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-dim); display: block; margin-bottom: 0.35rem; }
+
+  ul.list { list-style: none; max-width: 44rem; margin: 0.4rem 0 1rem; }
+  ul.list li { position: relative; padding: 0.7rem 0 0.7rem 1.4rem; border-bottom: 1px solid var(--border); font-size: 0.93rem; }
+  ul.list li::before { content: ''; position: absolute; left: 0.1rem; top: 1.25rem; width: 7px; height: 7px; border-radius: 50%; background: var(--gold); box-shadow: 0 0 8px rgba(232,200,120,0.6); }
+  ul.list li b { color: var(--text-bright); font-weight: 600; }
+  ul.list li small { display: block; color: var(--text-mid); font-size: 0.85rem; margin-top: 0.15rem; }
+
+  .note { font-size: 0.85rem; color: var(--text-mid); }
+  footer { max-width: 980px; margin: 0 auto; padding: 2rem 1.25rem 3rem; border-top: 1px solid var(--border); font-family: 'Space Mono', monospace; font-size: 0.64rem; color: var(--text-dim); display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+
+  .draw { stroke-dasharray: var(--len); stroke-dashoffset: var(--len); animation: draw 2.4s cubic-bezier(.4,.1,.2,1) forwards; animation-delay: var(--d, 0s); }
+  .pop { opacity: 0; animation: pop 0.5s ease forwards; animation-delay: var(--d, 0s); }
+  @keyframes draw { to { stroke-dashoffset: 0; } }
+  @keyframes pop { to { opacity: 1; } }
+  @media (prefers-reduced-motion: reduce) { .draw { animation: none; stroke-dashoffset: 0; } .pop { animation: none; opacity: 1; } }
+  @media (max-width: 520px) { .nav a.opt { display: none; } .hero { padding-top: 2.4rem; } }
+</style>
+</head>
+<body>
+
+<div class="top">
+  <a class="brand" href="index.html">WEFT</a>
+  <nav class="nav">
+    <a href="index.html">Timeline</a>
+    <a href="weft-3d.html" class="opt">3D loom</a>
+  </nav>
+</div>
+
+<div class="hero">
+  <div class="eyebrow">About</div>
+  <h1>Weaving the fabric of time</h1>
+  <p class="lede">Weft sets the events of world history side by side so you can see what usually gets told separately: how a coup becomes a novel, how a famine becomes a song, and who was standing where when it happened.</p>
+
+  <svg class="loom" id="loom" viewBox="0 0 960 260" role="img" aria-label="Diagram: five horizontal lanes running through time, with golden threads crossing between events on different lanes."></svg>
+  <div class="loom-cap">
+    <span style="--c:rgba(140,160,200,0.6)">warp — the lanes, running through time</span>
+    <span style="--c:#e8c878">weft — the threads woven across them</span>
+  </div>
+</div>
+
+<main>
+
+<section>
+  <h2>Why “Weft”</h2>
+  <p class="big">On a loom, the warp threads run lengthwise and hold everything in place. The weft is the thread passed across them, over and under, and it’s the weft that makes the pattern.</p>
+  <p>Here the warp is time, split into lanes: politics, science, music, sport, religion, fashion, disasters and the rest. Each event is a knot on its lane. The threads are the weft. They cross from lane to lane to show what led to what: a war and the photograph that turned opinion against it, an earthquake and the book of survivors’ voices that followed.</p>
+  <p>History is usually taught one strand at a time. Weft is an attempt to see the cloth.</p>
+</section>
+
+<section>
+  <h2>Art as a response</h2>
+  <p>The spark for Weft was a simple question: what did people <em>make</em> in answer to what was happening around them? Paintings, songs, protest posters, guerrilla installations, novels, memoirs, reportage.</p>
+  <p>Those works sit in Weft beside the events that prompted them. They carry a white ring, and each card says what the work was “made in response to”, or what art an event went on to inspire. Where a work came first and the event followed, the two are joined by an ordinary thread instead.</p>
+</section>
+
+<section>
+  <h2>People and places</h2>
+  <p>The <em>who</em> in history matters as much as the <em>when</em> and <em>why</em>. Every event names the people involved and where it happened. Tap a person to see when and where they were born and died, and to follow their lifeline through the events they appear in. Tap a place to find it on the globe and see what else happened there.</p>
+</section>
+
+<section>
+  <h2>How to read it</h2>
+  <div class="how">
+    <div class="card"><span class="k">2D timeline</span><h3>A year at a time</h3><p>Every lane laid out across the months. Step year by year, or switch to a single strip on smaller screens.</p></div>
+    <div class="card"><span class="k">3D loom</span><h3>The whole cloth</h3><p>Decades as a cloud of stars. Drag to orbit, scroll to zoom, and use the sliders to move through time.</p></div>
+    <div class="card"><span class="k">Globe</span><h3>Where it happened</h3><p>The same threads drawn as glowing arcs across a world map, lighting up as time passes.</p></div>
+    <div class="card"><span class="k">Search</span><h3>Find anything</h3><p>Type a person, place or event, or a date: “1984”, “Sep 1973”, “11 September 1973”, “1985–1989”, or mix them: “Chile 1973”.</p></div>
+  </div>
+</section>
+
+<section>
+  <h2>What’s in it so far</h2>
+  <div class="stats">
+    <div class="stat"><b id="nEv">—</b><span>events</span></div>
+    <div class="stat"><b id="nArt">—</b><span>artworks &amp; books</span></div>
+    <div class="stat"><b id="nPp">—</b><span>people</span></div>
+    <div class="stat"><b id="nPl">—</b><span>places</span></div>
+  </div>
+  <p>Weft currently covers <span id="eras">1492, 1776, 1914 and 1970–1999</span>, across <span id="nLanes">25</span> lanes:</p>
+  <div class="lanes" id="lanes"></div>
+  <p class="note">It’s a work in progress, and the gaps are real. The aim is the whole world, not one country’s version of it.</p>
+</section>
+
+<section>
+  <h2>Sources and credits</h2>
+  <ul class="list">
+    <li><b>Wikipedia</b><small>Nearly every event, person and work links to its Wikipedia article, and Weft leans on Wikipedia throughout. The short summaries on each card are written for Weft rather than copied. Wikipedia’s own text is shared under the <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener">Creative Commons Attribution-ShareAlike 4.0</a> licence. Thank you to the volunteers who write it.</small></li>
+    <li><b>Wikimedia Commons</b><small>Pictures are loaded live from Wikipedia and are limited to freely licensed images. Each picture’s credit links to its page on Commons, which names the author and the licence it’s shared under.</small></li>
+    <li><b>Wikidata</b><small>Dates and places of birth and death are fetched live from <a href="https://www.wikidata.org/wiki/Wikidata:Licensing" target="_blank" rel="noopener">Wikidata</a>, whose structured data is released under CC0.</small></li>
+    <li><b>Natural Earth</b><small>The world map behind the globe is drawn from <a href="https://www.naturalearthdata.com/about/" target="_blank" rel="noopener">Natural Earth</a>, a public-domain map dataset.</small></li>
+    <li><b>Three.js</b><small>The 3D loom and globe are built with <a href="https://threejs.org/" target="_blank" rel="noopener">three.js</a> (MIT licence).</small></li>
+    <li><b>Type</b><small>Space Grotesk and Space Mono, served by Google Fonts under the SIL Open Font License.</small></li>
+  </ul>
+  <p class="note">Weft is an independent project. It isn’t affiliated with or endorsed by Wikipedia or the Wikimedia Foundation.</p>
+</section>
+
+<section>
+  <h2>Notes and disclaimers</h2>
+  <ul class="list">
+    <li><b>Accuracy</b><small>Weft is made with care, but it’s a simplified picture of a complicated past, and mistakes are possible. Summaries are short by design, and history is often contested. Treat Weft as a starting point and check anything important against primary sources.</small></li>
+    <li><b>Dates</b><small>Where only the year or month of something is known, Weft says so on the card rather than inventing a day. Those items sit mid-year or mid-month on the timeline.</small></li>
+    <li><b>Difficult subjects</b><small>History includes war, genocide, violence and death, and Weft doesn’t leave them out. Some cards and linked pictures may be distressing.</small></li>
+    <li><b>Artworks and books</b><small>Weft describes and links to works of art and literature; it doesn’t reproduce them. Copyright in those works stays with their artists, authors and estates.</small></li>
+    <li><b>Links to other sites</b><small>Weft links to Wikipedia and other websites it doesn’t control, and isn’t responsible for their content.</small></li>
+    <li><b>Corrections</b><small>Spotted a mistake, or something important that’s missing? Corrections are welcome: <a href="report.html">report an error</a>, or use the “Report an error” link on any card.</small></li>
+  </ul>
+</section>
+
+<section>
+  <h2>Privacy</h2>
+  <p>Weft has no accounts, sets no cookies and runs no tracking or analytics. It doesn’t collect anything about you.</p>
+  <p>To work, your browser does talk to a few other services, and each of them will see your IP address like any website you visit:</p>
+  <ul class="list">
+    <li><b>GitHub Pages</b><small>which hosts Weft.</small></li>
+    <li><b>Wikipedia, Wikidata and Wikimedia Commons</b><small>for pictures, and for birth and death details.</small></li>
+    <li><b>Google Fonts</b><small>for the typefaces.</small></li>
+    <li><b>Web3Forms</b><small>only if you report an error: it delivers what you type in the form by email, and nothing else.</small></li>
+  </ul>
+</section>
+
+</main>
+
+<footer>
+  <span>Made in Cape Town</span>
+  <span>Built with the help of Claude, by Anthropic</span>
+</footer>
+
+<script>
+// ── The loom diagram: five warp lanes, knots, and weft threads crossing between them ──
+(() => {
+  const svg = document.getElementById('loom'), NS = 'http://www.w3.org/2000/svg';
+  const lanes = [
+    { y: 40,  c: '#e05c5c', name: 'Politics' },
+    { y: 85,  c: '#e8a040', name: 'Conflict' },
+    { y: 130, c: '#5cb0e0', name: 'Science' },
+    { y: 175, c: '#c070e0', name: 'Visual art' },
+    { y: 220, c: '#e8a878', name: 'Literature' },
+  ];
+  const el = (n, a) => { const e = document.createElementNS(NS, n); for (const k in a) e.setAttribute(k, a[k]); svg.appendChild(e); return e; };
+  lanes.forEach((l, i) => {
+    const line = el('line', { x1: 110, x2: 950, y1: l.y, y2: l.y, stroke: 'rgba(140,160,200,0.28)', 'stroke-width': 1.2, class: 'draw' });
+    line.style.setProperty('--len', 840); line.style.setProperty('--d', (i * 0.08) + 's');
+    const t = el('text', { x: 100, y: l.y + 4, 'text-anchor': 'end', fill: l.c, 'font-size': 12, 'font-family': 'Space Mono, monospace', class: 'pop' });
+    t.textContent = l.name; t.style.setProperty('--d', (0.2 + i * 0.08) + 's');
+  });
+  // knots: [lane, x]
+  const K = [[0,200],[1,260],[2,330],[0,470],[1,520],[3,560],[4,640],[2,700],[3,780],[4,860],[0,900],[1,380]];
+  // threads: pairs of knot indices — cause and effect, and art answering events
+  const T = [[0,1],[1,5],[1,6],[3,4],[4,8],[2,6],[7,9],[11,3],[8,10],[5,6]];
+  T.forEach(([a, b], i) => {
+    const A = K[a], B = K[b], x1 = A[1], y1 = lanes[A[0]].y, x2 = B[1], y2 = lanes[B[0]].y, mx = (x1 + x2) / 2;
+    const p = el('path', { d: `M${x1},${y1} C${mx},${y1} ${mx},${y2} ${x2},${y2}`, fill: 'none', stroke: '#e8c878', 'stroke-opacity': 0.75, 'stroke-width': 1.4, class: 'draw' });
+    const len = p.getTotalLength(); p.style.setProperty('--len', len); p.style.setProperty('--d', (0.9 + i * 0.16) + 's');
+  });
+  K.forEach(([l, x], i) => {
+    const art = l >= 3;
+    const g = el('circle', { cx: x, cy: lanes[l].y, r: 13, fill: lanes[l].c, opacity: 0, class: 'pop' }); g.style.setProperty('--d', (0.5 + i * 0.06) + 's'); g.setAttribute('fill-opacity', 0.16);
+    const c = el('circle', { cx: x, cy: lanes[l].y, r: 6.5, fill: lanes[l].c, class: 'pop' }); c.style.setProperty('--d', (0.5 + i * 0.06) + 's');
+    if (art) { const r = el('circle', { cx: x, cy: lanes[l].y, r: 9.5, fill: 'none', stroke: 'rgba(255,255,255,0.85)', 'stroke-width': 1.3, class: 'pop' }); r.style.setProperty('--d', (0.5 + i * 0.06) + 's'); }
+  });
+})();
+
+// ── Live counts, straight from the data so they never go stale ──
+fetch('weft-data.json', { cache: 'no-cache' }).then(r => r.json()).then(d => {
+  const ev = d.events;
+  document.getElementById('nEv').textContent = ev.length;
+  document.getElementById('nArt').textContent = ev.filter(e => e.art).length;
+  document.getElementById('nPp').textContent = Object.keys(d.people).length;
+  document.getElementById('nPl').textContent = Object.keys(d.places).length;
+  const doms = Object.values(d.domains);
+  document.getElementById('nLanes').textContent = doms.length;
+  const box = document.getElementById('lanes');
+  doms.forEach(x => { const s = document.createElement('span'); s.className = 'lane'; s.innerHTML = `<i style="background:${x.color}"></i>`; s.append(x.label); box.appendChild(s); });
+  // eras: runs of consecutive years
+  const ys = [...new Set(ev.map(e => e.year))].sort((a, b) => a - b), runs = [];
+  ys.forEach(y => { const r = runs[runs.length - 1]; if (r && y === r[1] + 1) r[1] = y; else runs.push([y, y]); });
+  const txt = runs.map(([a, b]) => a === b ? String(a) : `${a}–${b}`);
+  document.getElementById('eras').textContent = txt.length > 1 ? txt.slice(0, -1).join(', ') + ' and ' + txt[txt.length - 1] : txt[0];
+}).catch(() => {});
+</script>
+</body>
+</html>

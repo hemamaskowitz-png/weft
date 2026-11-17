@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en-ZA">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Report an error · Weft</title>
+<meta name="robots" content="noindex">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600&family=Space+Mono:wght@400;700&display=swap');
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root { --bg: #080c14; --bg-card: #131d2e; --border: rgba(255,255,255,0.1); --text: #c8d4e8; --text-dim: #5a6a80; --text-mid: #8a9ab8; --text-bright: #e8f0ff; --gold: #e8c878; --red: #e05c5c; }
+  html, body { background: var(--bg); }
+  body { color: var(--text); font-family: 'Space Grotesk', system-ui, sans-serif; line-height: 1.6; -webkit-font-smoothing: antialiased; }
+  a { color: var(--gold); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  .top { display: flex; align-items: center; justify-content: space-between; padding: 0.8rem 1.25rem; border-bottom: 1px solid var(--border); }
+  .brand { font-family: 'Space Mono', monospace; letter-spacing: 0.2em; color: var(--text-bright); font-size: 0.95rem; }
+  .top nav a { font-family: 'Space Mono', monospace; font-size: 0.66rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text); border: 1px solid var(--border); border-radius: 8px; padding: 0.45rem 0.7rem; margin-left: 0.3rem; }
+  main { max-width: 620px; margin: 0 auto; padding: 2.6rem 1.25rem 4rem; }
+  .eyebrow { font-family: 'Space Mono', monospace; font-size: 0.68rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--gold); }
+  h1 { font-size: clamp(1.8rem, 6vw, 2.6rem); color: var(--text-bright); font-weight: 600; line-height: 1.1; margin: 0.5rem 0 0.8rem; letter-spacing: -0.01em; }
+  .intro { color: var(--text-mid); margin-bottom: 1.8rem; }
+
+  .about { background: var(--bg-card); border: 1px solid var(--border); border-left: 3px solid var(--c, var(--gold)); border-radius: 10px; padding: 0.8rem 1rem; margin-bottom: 1.4rem; display: none; }
+  .about.on { display: block; }
+  .about .k { font-family: 'Space Mono', monospace; font-size: 0.58rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-dim); }
+  .about .t { color: var(--text-bright); font-weight: 600; }
+  .about .d { font-family: 'Space Mono', monospace; font-size: 0.66rem; color: var(--text-mid); }
+
+  label { display: block; font-size: 0.86rem; color: var(--text-bright); font-weight: 500; margin: 1.1rem 0 0.35rem; }
+  label span { font-weight: 400; color: var(--text-dim); font-size: 0.78rem; }
+  input[type=text], input[type=email], input[type=url], textarea, select {
+    width: 100%; background: rgba(255,255,255,0.04); border: 1px solid var(--border); border-radius: 10px; color: var(--text-bright);
+    font-family: inherit; font-size: 16px; padding: 0.65rem 0.8rem; outline: none; }
+  textarea { min-height: 130px; resize: vertical; line-height: 1.5; }
+  input:focus, textarea:focus, select:focus { border-color: rgba(232,200,120,0.6); background: rgba(255,255,255,0.07); }
+  select option { background: #131d2e; }
+  .hint { font-size: 0.75rem; color: var(--text-dim); margin-top: 0.3rem; }
+  .hp { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
+  button { margin-top: 1.6rem; width: 100%; background: var(--gold); color: #1a1408; border: none; border-radius: 10px; font-family: 'Space Mono', monospace; font-size: 0.8rem; letter-spacing: 0.12em; text-transform: uppercase; font-weight: 700; padding: 0.9rem; cursor: pointer; }
+  button:disabled { opacity: 0.5; cursor: default; }
+  .msg { margin-top: 1rem; font-size: 0.88rem; display: none; padding: 0.8rem 1rem; border-radius: 10px; }
+  .msg.err { display: block; color: #ffd0d0; background: rgba(224,92,92,0.12); border: 1px solid rgba(224,92,92,0.35); }
+  .done { display: none; text-align: center; padding: 2rem 0; }
+  .done.on { display: block; }
+  .done h2 { color: var(--text-bright); font-size: 1.5rem; margin-bottom: 0.5rem; }
+  .done p { color: var(--text-mid); margin-bottom: 1.2rem; }
+  .privacy { margin-top: 1.4rem; font-size: 0.75rem; color: var(--text-dim); }
+</style>
+</head>
+<body>
+<div class="top">
+  <a class="brand" href="index.html">WEFT</a>
+  <nav><a href="index.html">Timeline</a><a href="about.html">About</a></nav>
+</div>
+
+<main>
+  <div id="formWrap">
+    <div class="eyebrow">Corrections</div>
+    <h1>Report an error</h1>
+    <p class="intro">Spotted a wrong date, a missing person, a broken link or something important that’s been left out? Tell me and I’ll look into it.</p>
+
+    <div class="about" id="aboutEv"><div class="k">About this card</div><div class="t" id="evTitle"></div><div class="d" id="evDate"></div></div>
+
+    <form id="form" novalidate>
+      <label for="kind">What kind of problem?</label>
+      <select id="kind" name="kind">
+        <option>A wrong fact, date or name</option>
+        <option>Something is missing</option>
+        <option>A broken or wrong link or picture</option>
+        <option>A connection that doesn’t make sense</option>
+        <option>Something else</option>
+      </select>
+
+      <label for="what" id="whatLbl">Which event, person or place? <span>(if it’s not a single card, say what it’s about)</span></label>
+      <input type="text" id="what" name="what" maxlength="200">
+
+      <label for="detail">What’s wrong, and what should it be?</label>
+      <textarea id="detail" name="detail" maxlength="4000" required></textarea>
+
+      <label for="source">A source <span>(optional, but it helps: a link or a book)</span></label>
+      <input type="text" id="source" name="source" maxlength="500">
+
+      <label for="name">Your name <span>(optional)</span></label>
+      <input type="text" id="name" name="name" maxlength="100" autocomplete="name">
+
+      <label for="email">Your email <span>(optional, only if you’d like a reply)</span></label>
+      <input type="email" id="email" name="email" maxlength="200" autocomplete="email">
+
+      <div class="hp" aria-hidden="true"><label>Leave this empty <input type="checkbox" name="botcheck" tabindex="-1" autocomplete="off"></label></div>
+
+      <button type="submit" id="send">Send report</button>
+      <div class="msg" id="msg"></div>
+      <p class="privacy">What you type here is sent by email through Web3Forms and used only to fix Weft. Nothing is published.</p>
+    </form>
+  </div>
+
+  <div class="done" id="done">
+    <h2>Thank you</h2>
+    <p>Your report is on its way. Every correction makes the cloth a little truer.</p>
+    <a href="index.html">Back to the timeline</a>
+  </div>
+</main>
+
+<script>
+// The Web3Forms access key. It only lets this form send to one inbox; it isn't a password.
+const ACCESS_KEY = '';
+
+const $ = id => document.getElementById(id);
+const params = new URLSearchParams(location.search);
+const evId = parseInt(params.get('id'), 10);
+let ev = null;
+
+if (evId) {
+  fetch('weft-data.json', { cache: 'no-cache' }).then(r => r.json()).then(d => {
+    ev = d.events.find(e => e.id === evId);
+    if (!ev) return;
+    const dom = d.domains[ev.domain] || {};
+    $('aboutEv').style.setProperty('--c', dom.color || '#e8c878');
+    $('evTitle').textContent = ev.title;
+    $('evDate').textContent = [ev.year, dom.label].filter(Boolean).join(' · ');
+    $('aboutEv').classList.add('on');
+    $('what').value = ev.title;
+    $('whatLbl').firstChild.textContent = 'Which event, person or place? ';
+  }).catch(() => {});
+}
+
+$('form').addEventListener('submit', async e => {
+  e.preventDefault();
+  const msg = $('msg'); msg.className = 'msg';
+  const detail = $('detail').value.trim();
+  if (detail.length < 5) { msg.textContent = 'Please say what’s wrong.'; msg.className = 'msg err'; $('detail').focus(); return; }
+  const email = $('email').value.trim();
+  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { msg.textContent = 'That email address doesn’t look right. You can also leave it empty.'; msg.className = 'msg err'; $('email').focus(); return; }
+  if (!ACCESS_KEY) { msg.textContent = 'Error reports aren’t switched on yet. Please try again soon.'; msg.className = 'msg err'; return; }
+
+  const what = $('what').value.trim();
+  const body = {
+    access_key: ACCESS_KEY,
+    subject: 'Weft error report: ' + (what || $('kind').value).slice(0, 90),
+    from_name: 'Weft',
+    'Problem': $('kind').value,
+    'About': what || '(not given)',
+    'Card ID': ev ? String(ev.id) : '(none)',
+    'Details': detail,
+    'Source': $('source').value.trim() || '(none)',
+    'Name': $('name').value.trim() || '(not given)',
+    'email': email || undefined,
+    botcheck: document.querySelector('[name=botcheck]').checked,
+  };
+  $('send').disabled = true; $('send').textContent = 'Sending…';
+  try {
+    const r = await fetch('https://api.web3forms.com/submit', { method: 'POST', headers: { 'Content-Type': 'application/json', Accept: 'application/json' }, body: JSON.stringify(body) });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok || j.success === false) throw new Error(j.message || 'Send failed');
+    $('formWrap').style.display = 'none'; $('done').classList.add('on'); scrollTo(0, 0);
+  } catch (err) {
+    msg.textContent = 'Sorry, that didn’t send. Please check your connection and try again.'; msg.className = 'msg err';
+    $('send').disabled = false; $('send').textContent = 'Send report';
+  }
+});
+</script>
+</body>
+</html>

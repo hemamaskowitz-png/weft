@@ -32,12 +32,14 @@
   #card.on { display: block; }
   .card-img { margin: -1.1rem -1.2rem 0.9rem; border-radius: 14px 14px 0 0; overflow: hidden; position: relative; display: none; background: #0b111d; }
   .card-img img { display: block; width: 100%; max-height: 220px; object-fit: cover; }
-  .card-img .cr { position: absolute; right: 0.5rem; bottom: 0.35rem; font-family: 'Space Mono', monospace; font-size: 0.5rem; color: rgba(255,255,255,0.7); text-shadow: 0 1px 3px #000; }
+  .card-img .cr { position: absolute; right: 0.5rem; bottom: 0.35rem; font-family: 'Space Mono', monospace; font-size: 0.5rem; text-decoration: none; color: rgba(255,255,255,0.85); text-shadow: 0 1px 3px #000; }
   .card-close { position: sticky; top: -0.5rem; margin: -0.6rem -0.6rem -32px auto; z-index: 3; width: 32px; height: 32px; border-radius: 50%; background: rgba(8,12,22,0.75); border: 1px solid rgba(255,255,255,0.18); color: #e8ecf4; font-size: 0.95rem; line-height: 1; cursor: pointer; display: flex; align-items: center; justify-content: center; }
   .card-dom { display: flex; align-items: center; gap: 0.4rem; font-family: 'Space Mono', monospace; font-size: 0.58rem; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 0.4rem; }
   .card-title { font-size: 1.05rem; font-weight: 600; color: var(--bright); line-height: 1.3; }
   .card-date { font-family: 'Space Mono', monospace; font-size: 0.58rem; color: var(--dim); margin: 0.25rem 0 0.7rem; }
   .card-body { font-size: 0.78rem; line-height: 1.6; }
+  .report-link { display: inline-block; margin: 0.8rem 0 0 0.8rem; font-family: 'Space Mono', monospace; font-size: 0.58rem; color: var(--dim); text-decoration: none; }
+  .report-link:hover { text-decoration: underline; }
   .card-link { display: inline-block; margin-top: 0.8rem; font-family: 'Space Mono', monospace; font-size: 0.62rem; padding: 0.35rem 0.7rem; border: 1px solid; border-radius: 6px; text-decoration: none; }
   .card-threads { margin-top: 0.9rem; display: flex; flex-wrap: wrap; gap: 0.35rem; }
   .ct-label { width: 100%; font-family: 'Space Mono', monospace; font-size: 0.55rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--dim); }
@@ -90,6 +92,7 @@
     <button class="era-btn active" data-era="1980s">1980s</button>
     <button class="era-btn" data-era="1990s">1990s</button>
     <a class="hud-link" href="index.html?v=20261117">2D &rarr;</a>
+    <a class="hud-link" href="about.html">About</a>
   </div>
 </div>
 <div id="help">click an event for its story &middot; bright strands are threads</div>
@@ -113,6 +116,7 @@
   <div class="card-date" id="cDate"></div>
   <div class="card-body" id="cBody"></div>
   <a class="card-link" id="cWiki" target="_blank" rel="noopener">&rarr; Wikipedia</a>
+  <a class="report-link" id="cReport" target="_blank" rel="noopener">Report an error</a>
   <div class="resp-row" id="cResp"></div>
   <div class="card-threads" id="cThreads"></div>
   <div class="who-row" id="cWho"></div>
@@ -166,6 +170,27 @@
   @media (max-width: 700px) {
     #whoPanel { top: auto; bottom: 0; left: 0; right: 0; width: auto; max-width: none; max-height: 72vh; border-radius: 18px 18px 0 0; }
   }
+
+  /* Search — shared */
+  .ws-wrap { position: relative; flex: 1; min-width: 0; max-width: 420px; }
+  .ws-input { width: 100%; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.12); border-radius: 18px; color: #e8f0ff; font-family: 'Space Grotesk', system-ui, sans-serif; font-size: 16px; padding: 0.45rem 2rem 0.45rem 2rem; outline: none; }
+  .ws-input:focus { border-color: rgba(232,200,120,0.6); background: rgba(255,255,255,0.08); }
+  .ws-input::placeholder { color: #5a6a80; }
+  .ws-ico { position: absolute; left: 0.7rem; top: 50%; transform: translateY(-50%); color: #5a6a80; font-size: 0.85rem; pointer-events: none; }
+  .ws-clear { position: absolute; right: 0.35rem; top: 50%; transform: translateY(-50%); background: none; border: none; color: #8a9ab8; font-size: 0.9rem; cursor: pointer; padding: 0.3rem 0.45rem; display: none; }
+  .ws-list { position: absolute; top: calc(100% + 6px); left: 0; width: min(460px, calc(100vw - 1.5rem)); max-height: min(70vh, 560px); overflow-y: auto; background: rgba(15,22,36,0.98); border: 1px solid rgba(232,200,120,0.28); border-radius: 14px; box-shadow: 0 12px 48px rgba(0,0,0,0.6); z-index: 45; display: none; padding: 0.4rem; font-family: 'Space Grotesk', system-ui, sans-serif; }
+  .ws-list.on { display: block; }
+  .ws-h { font-family: 'Space Mono', monospace; font-size: 0.55rem; letter-spacing: 0.12em; text-transform: uppercase; color: #5a6a80; padding: 0.55rem 0.55rem 0.25rem; }
+  .ws-note { font-size: 0.72rem; color: #8a9ab8; padding: 0.5rem 0.6rem; line-height: 1.45; }
+  .ws-row { display: flex; align-items: center; gap: 0.55rem; width: 100%; background: none; border: none; color: #c8d4e8; text-align: left; padding: 0.45rem 0.55rem; border-radius: 9px; cursor: pointer; font-family: inherit; font-size: 0.8rem; }
+  .ws-row:hover, .ws-row.sel { background: rgba(232,200,120,0.1); }
+  .ws-row .d { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .ws-row .i { width: 1rem; text-align: center; flex-shrink: 0; font-size: 0.8rem; }
+  .ws-row .t { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .ws-row .s { display: block; font-size: 0.66rem; color: #8a9ab8; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .ws-row .y { font-family: 'Space Mono', monospace; font-size: 0.6rem; color: #5a6a80; flex-shrink: 0; }
+  @media (max-width: 599px) { .ws-wrap { order: 3; flex: 1 1 100%; max-width: none; } .ws-list { width: 100%; max-height: 62vh; } }
+  .ws-row.art .d { outline: 1.5px solid rgba(255,255,255,0.85); outline-offset: 1.5px; }
 </style>
 <div id="whoPanel" role="dialog" aria-label="Person or place"><button class="wp-close" aria-label="Close">&#10005;</button><div id="whoBody"></div></div>
 <script>
@@ -318,14 +343,13 @@ window.WeftWho = (() => {
     let title; try { title = decodeURIComponent(m[1]).replace(/_/g, ' '); } catch (e) { title = m[1].replace(/_/g, ' '); }
     if (imgCache.has(title)) return imgCache.get(title);
     const p = (async () => {
+      // pageimages only offers freely licensed pictures by default, so no fair-use covers or posters.
       try {
-        const j = await getJSON(`https://en.wikipedia.org/w/api.php?action=query&prop=pageimages&piprop=thumbnail&pithumbsize=960&redirects=1&format=json&origin=*&titles=${encodeURIComponent(title)}`);
+        const j = await getJSON(`https://en.wikipedia.org/w/api.php?action=query&prop=pageimages&piprop=thumbnail|name&pilicense=free&pithumbsize=960&redirects=1&format=json&origin=*&titles=${encodeURIComponent(title)}`);
         const pg = j.query && j.query.pages && Object.values(j.query.pages)[0];
-        if (pg && pg.thumbnail && pg.thumbnail.source) return { src: pg.thumbnail.source, credit: 'Wikipedia / Wikimedia Commons' };
-      } catch (e) { /* try the summary instead */ }
-      try {
-        const j = await getJSON(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(title.replace(/ /g, '_'))}`);
-        if (j.thumbnail && j.thumbnail.source) return { src: j.thumbnail.source, credit: 'Wikipedia / Wikimedia Commons' };
+        if (pg && pg.thumbnail && pg.thumbnail.source) return {
+          src: pg.thumbnail.source, credit: 'Image: Wikimedia Commons · author & licence',
+          href: pg.pageimage ? 'https://commons.wikimedia.org/wiki/File:' + encodeURIComponent(pg.pageimage) : null };
       } catch (e) { /* offline or blocked */ }
       return null;
     })();
@@ -457,7 +481,108 @@ window.WeftWho = (() => {
     }));
   }
 
-  return { init, renderChips, openPerson, openPlace, close, life, fmtDate, fmtPlace, image, world, fmtEvDate, renderResponses, responseIds };
+
+  // ── Search: words for people, places and events; dates as a year, month, day or range ──
+    const fold = t => String(t || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
+    .replace(/[łŁ]/g, 'l').replace(/[øØ]/g, 'o').replace(/[đĐ]/g, 'd').replace(/ß/g, 'ss').replace(/æ/g, 'ae').replace(/œ/g, 'oe')
+    .replace(/[’'`]/g, '').replace(/[^a-z0-9\s-]/g, ' ');
+  const MFULL = 'january february march april may june july august september october november december'.split(' ');
+  const monthOf = w => { if (w.length < 3) return 0; if (w === 'sept') return 9; const i = MFULL.findIndex(m => m.startsWith(w)); return i + 1; };
+  let idx = null;
+  function buildIndex() {
+    const dom = k => (D.domains[k] || {}).label || '';
+    idx = {
+      ev: D.events.map(e => {
+        const pl = D.places[e.place];
+        const ppl = (e.people || []).map(t => D.people[t] ? D.people[t].name : t.replace(/_/g, ' '));
+        return { e, title: fold(e.title), hay: fold([e.title, e.body, pl && pl.name, pl && pl.country, ...ppl, dom(e.domain), e.art ? 'art response' : ''].join(' ')) };
+      }),
+      pp: Object.entries(D.people).map(([k, p]) => ({ k, p, name: fold(p.name), hay: fold(p.name + ' ' + (p.desc || '')) })),
+      pl: Object.entries(D.places).map(([k, p]) => ({ k, p, name: fold(p.name), hay: fold(p.name + ' ' + p.country) })),
+    };
+  }
+  function parseQuery(q) {
+    let t = ' ' + fold(q).replace(/(\d)\s*-\s*(\d)/g, '$1 to $2') + ' ';
+    let date = null;
+    const take = (re, fn) => { if (date) return; const g = new RegExp(re.source, 'g'); let m; while ((m = g.exec(t))) { const r = fn(m); if (r) { date = r; t = t.slice(0, m.index) + ' ' + t.slice(m.index + m[0].length); return; } g.lastIndex = m.index + 1; } };
+    take(/\b(\d{4})\s+(?:to|until)\s+(\d{4})\b/, m => ({ from: [+m[1], 1, 1], to: [+m[2], 12, 31], kind: 'range' }));
+    take(/\b(\d{4}) to (\d{1,2}) to (\d{1,2})\b/, m => ({ y: +m[1], m: +m[2], d: +m[3], kind: 'day' }));
+    take(/\b(\d{1,2})(?:st|nd|rd|th)?\s+([a-z]{3,9})\s+(\d{4})\b/, m => monthOf(m[2]) ? { y: +m[3], m: monthOf(m[2]), d: +m[1], kind: 'day' } : null);
+    take(/\b([a-z]{3,9})\s+(\d{1,2})(?:st|nd|rd|th)?\s+(\d{4})\b/, m => monthOf(m[1]) ? { y: +m[3], m: monthOf(m[1]), d: +m[2], kind: 'day' } : null);
+    take(/\b([a-z]{3,9})\s+(\d{4})\b/, m => monthOf(m[1]) ? { y: +m[2], m: monthOf(m[1]), kind: 'month' } : null);
+    take(/\b(\d{4})s\b/, m => ({ from: [+m[1], 1, 1], to: [+m[1] + 9, 12, 31], kind: 'range' }));
+    take(/\b(1\d{3}|20\d{2})\b/, m => ({ y: +m[1], kind: 'year' }));
+    const words = t.split(/\s+/).filter(w => w && w !== 'to');
+    return { date, words };
+  }
+  function dateHit(e, d) {
+    if (!d) return true;
+    const p = e.precision || 'day';
+    if (d.kind === 'year') return e.year === d.y;
+    if (d.kind === 'month') return e.year === d.y && p !== 'year' && e.month === d.m;
+    if (d.kind === 'day') return e.year === d.y && p === 'day' && e.month === d.m && e.day === d.d;
+    const k = e.year * 10000 + e.month * 100 + e.day;
+    return k >= d.from[0] * 10000 + d.from[1] * 100 + d.from[2] && k <= d.to[0] * 10000 + d.to[1] * 100 + d.to[2];
+  }
+  function search(q) {
+    if (!idx) buildIndex();
+    const { date, words } = parseQuery(q);
+    const has = (hay, w) => (' ' + hay).includes(' ' + w);   // match from the start of a word
+    const all = h => words.every(w => has(h, w));
+    let people = [], places = [];
+    if (words.length && !date) {
+      people = idx.pp.filter(x => all(x.hay)).sort((a, b) => (all(b.name) - all(a.name)) || a.p.name.localeCompare(b.p.name)).map(x => x.k);
+      places = idx.pl.filter(x => all(x.hay)).sort((a, b) => (all(b.name) - all(a.name)) || a.p.name.localeCompare(b.p.name)).map(x => x.k);
+    }
+    const events = idx.ev.filter(x => dateHit(x.e, date) && (!words.length || all(x.hay)))
+      .sort((a, b) => words.length && !date ? (all(b.title) - all(a.title)) || (evKey(a.e) - evKey(b.e)) : evKey(a.e) - evKey(b.e))
+      .map(x => x.e);
+    return { date, words, people, places, events };
+  }
+  function mountSearch(input, list, hooks = {}) {
+    const clear = input.parentElement.querySelector('.ws-clear');
+    const goEv = hooks.onEvent || (id => onJump(id));
+    let rows = [], sel = -1, timer = 0;
+    const hide = () => { list.classList.remove('on'); sel = -1; };
+    const go = i => { const r = rows[i]; if (!r) return; hide(); input.blur(); r.go(); };
+    function render() {
+      const q = input.value.trim();
+      if (clear) clear.style.display = q ? 'block' : 'none';
+      if (q.length < 2) { hide(); return; }
+      const r = search(q);
+      list.innerHTML = ''; rows = []; sel = -1;
+      const head = t => { const h = document.createElement('div'); h.className = 'ws-h'; h.textContent = t; list.appendChild(h); };
+      const add = (html, fn, cls = '') => { const b = document.createElement('button'); b.className = 'ws-row ' + cls; b.innerHTML = html; const i = rows.length; b.addEventListener('click', () => go(i)); b.addEventListener('mousemove', () => mark(i)); rows.push({ el: b, go: fn }); list.appendChild(b); };
+      if (r.people.length) { head('People'); r.people.slice(0, 6).forEach(k => { const p = D.people[k]; add(`<span class="i">👤</span><span class="t">${esc(p.name)}<span class="s">${esc(p.desc || '')}</span></span>`, () => openPerson(k)); }); }
+      if (r.places.length) { head('Places'); r.places.slice(0, 5).forEach(k => { const p = D.places[k]; add(`<span class="i">📍</span><span class="t">${esc(p.name)}<span class="s">${esc(p.country)}</span></span>`, () => openPlace(k)); }); }
+      const MAX = 60;
+      if (r.events.length) {
+        head(`Events · ${r.events.length}${r.events.length > MAX ? ' (first ' + MAX + ')' : ''}`);
+        r.events.slice(0, MAX).forEach(e => { const c = (D.domains[e.domain] || {}).color || '#888';
+          add(`<span class="d" style="background:${c}"></span><span class="t">${esc(e.title)}</span><span class="y">${esc(fmtEvDate(e))}</span>`, () => goEv(e.id), e.art ? 'art' : ''); });
+      }
+      if (!rows.length) {
+        const n = document.createElement('div'); n.className = 'ws-note';
+        n.textContent = r.date ? 'Nothing in Weft for that date yet.' : 'Nothing in Weft matches that yet. Weft only covers 1492, 1776, 1914 and 1970–1999 for now.';
+        list.appendChild(n);
+      }
+      list.classList.add('on'); list.scrollTop = 0;
+    }
+    function mark(i) { rows.forEach((r, j) => r.el.classList.toggle('sel', j === i)); sel = i; if (rows[i]) rows[i].el.scrollIntoView({ block: 'nearest' }); }
+    input.addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(render, 120); });
+    input.addEventListener('focus', () => { if (input.value.trim().length >= 2) render(); });
+    input.addEventListener('keydown', e => {
+      if (e.key === 'ArrowDown') { e.preventDefault(); mark(Math.min(rows.length - 1, sel + 1)); }
+      else if (e.key === 'ArrowUp') { e.preventDefault(); mark(Math.max(0, sel - 1)); }
+      else if (e.key === 'Enter') { e.preventDefault(); go(sel >= 0 ? sel : 0); }
+      else if (e.key === 'Escape') { e.stopPropagation(); hide(); input.blur(); }
+    });
+    if (clear) clear.addEventListener('click', () => { input.value = ''; hide(); clear.style.display = 'none'; input.focus(); });
+    document.addEventListener('pointerdown', e => { if (!list.contains(e.target) && e.target !== input) hide(); });
+    document.addEventListener('keydown', e => { if (e.key === '/' && document.activeElement.tagName !== 'INPUT') { e.preventDefault(); input.focus(); } });
+  }
+
+  return { search, mountSearch, init, renderChips, openPerson, openPlace, close, life, fmtDate, fmtPlace, image, world, fmtEvDate, renderResponses, responseIds };
 })();
 </script>
 <!--/WEFT-WHO-->
@@ -722,12 +847,13 @@ function openCard(ev) {
     img.onload = () => { if (currentFocusId === ev.id) im.style.display = 'block'; };
     img.onerror = () => { im.style.display = 'none'; };
     im.appendChild(img);
-    const cr = document.createElement('span'); cr.className = 'cr'; cr.textContent = pic.credit; im.appendChild(cr);
+    const cr = document.createElement(pic.href ? 'a' : 'span'); cr.className = 'cr'; cr.textContent = pic.credit; if (pic.href) { cr.href = pic.href; cr.target = '_blank'; cr.rel = 'noopener'; } im.appendChild(cr);
   });
   const w = document.getElementById('cWiki');
   w.innerHTML = /wikipedia\.org/.test(ev.wiki || '') ? '&rarr; Wikipedia' : '&rarr; Read more';
   if (ev.wiki) { w.style.display = 'inline-block'; w.href = ev.wiki; w.style.borderColor = d.color + '44'; w.style.color = d.color; }
   else w.style.display = 'none';
+  document.getElementById('cReport').href = 'report.html?id=' + ev.id;
   const ct = document.getElementById('cThreads'); ct.innerHTML = '';
   WeftWho.renderResponses(document.getElementById('cResp'), ev);
   const respIds = WeftWho.responseIds(ev);
