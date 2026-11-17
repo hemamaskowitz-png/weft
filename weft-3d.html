@@ -104,7 +104,242 @@
   <div class="card-body" id="cBody"></div>
   <a class="card-link" id="cWiki" target="_blank" rel="noopener">&rarr; Wikipedia</a>
   <div class="card-threads" id="cThreads"></div>
+  <div class="who-row" id="cWho"></div>
 </div>
+
+<!--WEFT-WHO-->
+<style>
+  /* People & places — shared by 2D and 3D */
+  .who-row { margin-top: 0.9rem; display: flex; flex-wrap: wrap; gap: 0.35rem; align-items: center; }
+  .who-label { width: 100%; font-family: 'Space Mono', monospace; font-size: 0.55rem; letter-spacing: 0.12em; text-transform: uppercase; color: #5a6a80; }
+  .who-chip { display: inline-flex; align-items: center; gap: 0.35rem; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); color: #c8d4e8; font-size: 0.68rem; padding: 0.3rem 0.6rem; border-radius: 14px; cursor: pointer; font-family: 'Space Grotesk', system-ui, sans-serif; text-align: left; transition: border-color 0.15s, background 0.15s; }
+  .who-chip:hover { border-color: rgba(232,200,120,0.6); background: rgba(232,200,120,0.08); }
+  .who-chip .wi { font-size: 0.75rem; line-height: 1; }
+  .who-chip.place { border-style: dashed; }
+
+  #whoPanel { position: fixed; top: 70px; left: 1rem; width: 350px; max-width: calc(100vw - 2rem); max-height: calc(100vh - 100px); overflow-y: auto; z-index: 300; background: rgba(15,22,36,0.97); border: 1px solid rgba(232,200,120,0.28); border-radius: 16px; padding: 1.1rem 1.2rem 1.2rem; display: none; box-shadow: 0 12px 48px rgba(0,0,0,0.6); backdrop-filter: blur(8px); font-family: 'Space Grotesk', system-ui, sans-serif; color: #c8d4e8; }
+  #whoPanel.on { display: block; }
+  #whoPanel .wp-close { position: absolute; top: 0.55rem; right: 0.75rem; background: none; border: none; color: #5a6a80; font-size: 1.1rem; cursor: pointer; }
+  #whoPanel .wp-close:hover { color: #e8f0ff; }
+  .wp-kind { font-family: 'Space Mono', monospace; font-size: 0.55rem; letter-spacing: 0.14em; text-transform: uppercase; color: #e8c878; margin-bottom: 0.35rem; }
+  .wp-name { font-size: 1.25rem; font-weight: 600; color: #e8f0ff; line-height: 1.2; padding-right: 1.2rem; }
+  .wp-desc { font-size: 0.8rem; color: #8a9ab8; margin-top: 0.3rem; line-height: 1.45; }
+  .wp-life { margin-top: 0.9rem; display: grid; grid-template-columns: auto 1fr; gap: 0.45rem 0.7rem; align-items: start; }
+  .wp-life .k { font-family: 'Space Mono', monospace; font-size: 0.55rem; letter-spacing: 0.1em; text-transform: uppercase; color: #5a6a80; padding-top: 0.15rem; }
+  .wp-life .v { font-size: 0.8rem; line-height: 1.4; }
+  .wp-life .v small { display: block; color: #8a9ab8; font-size: 0.7rem; }
+  .wp-life .v button { background: none; border: none; padding: 0; color: #e8c878; font: inherit; cursor: pointer; text-decoration: underline; text-decoration-color: rgba(232,200,120,0.35); text-underline-offset: 2px; }
+  .wp-loading { font-family: 'Space Mono', monospace; font-size: 0.6rem; color: #5a6a80; margin-top: 0.9rem; }
+  .wp-bar { position: relative; height: 4px; border-radius: 2px; background: rgba(255,255,255,0.07); margin: 0.9rem 0 0.2rem; }
+  .wp-bar .span { position: absolute; top: 0; bottom: 0; border-radius: 2px; background: linear-gradient(90deg, #e8c878, #c8a05c); }
+  .wp-bar .tick { position: absolute; top: -3px; width: 2px; height: 10px; background: #e8f0ff; border-radius: 1px; }
+  .wp-bar-l { display: flex; justify-content: space-between; font-family: 'Space Mono', monospace; font-size: 0.52rem; color: #5a6a80; }
+  .wp-sec { margin-top: 1rem; font-family: 'Space Mono', monospace; font-size: 0.55rem; letter-spacing: 0.12em; text-transform: uppercase; color: #5a6a80; }
+  .wp-events { margin-top: 0.45rem; display: flex; flex-direction: column; gap: 0.3rem; }
+  .wp-ev { display: grid; grid-template-columns: 10px 1fr auto; gap: 0.55rem; align-items: center; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 9px; padding: 0.45rem 0.6rem; cursor: pointer; text-align: left; color: #c8d4e8; font: inherit; font-size: 0.74rem; }
+  .wp-ev:hover { border-color: rgba(255,255,255,0.25); }
+  .wp-ev .d { width: 8px; height: 8px; border-radius: 50%; }
+  .wp-ev .y { font-family: 'Space Mono', monospace; font-size: 0.58rem; color: #5a6a80; }
+  .wp-ev.life { cursor: default; border-style: dashed; color: #e8c878; }
+  .wp-link { display: inline-block; margin-top: 1rem; font-family: 'Space Mono', monospace; font-size: 0.6rem; padding: 0.35rem 0.7rem; border: 1px solid rgba(232,200,120,0.35); color: #e8c878; border-radius: 6px; text-decoration: none; }
+  .wp-note { margin-top: 0.8rem; font-size: 0.62rem; color: #5a6a80; line-height: 1.4; }
+  @media (max-width: 700px) {
+    #whoPanel { top: auto; bottom: 0; left: 0; right: 0; width: auto; max-width: none; max-height: 72vh; border-radius: 18px 18px 0 0; }
+  }
+</style>
+<div id="whoPanel" role="dialog" aria-label="Person or place"><button class="wp-close" aria-label="Close">&#10005;</button><div id="whoBody"></div></div>
+<script>
+// ── WEFT WHO: people & places ─────────────────────────────────────────────────
+// Birth and death details come live from Wikidata, so they are sourced, not typed in.
+window.WeftWho = (() => {
+  const M = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  let D = null, onJump = () => {}, onPerson = () => {}, onClose = () => {};
+  const lifeCache = new Map();
+  const panel = () => document.getElementById('whoPanel');
+  const body = () => document.getElementById('whoBody');
+  const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+  function init(data, hooks = {}) {
+    D = data;
+    onJump = hooks.onJump || onJump; onPerson = hooks.onPerson || onPerson; onClose = hooks.onClose || onClose;
+    panel().querySelector('.wp-close').addEventListener('click', close);
+    document.addEventListener('keydown', e => { if (e.key === 'Escape' && panel().classList.contains('on')) { e.stopPropagation(); close(); } }, true);
+  }
+  function close() { panel().classList.remove('on'); onClose(); }
+
+  // ── Wikidata ──
+  async function getJSON(url) { const r = await fetch(url); if (!r.ok) throw new Error(r.status); return r.json(); }
+  function claim(ent, p) {
+    const c = ent && ent.claims && ent.claims[p]; if (!c || !c.length) return null;
+    const best = c.find(x => x.rank === 'preferred') || c.find(x => x.rank !== 'deprecated') || c[0];
+    return best.mainsnak && best.mainsnak.datavalue ? best.mainsnak.datavalue.value : null;
+  }
+  function parseTime(v) {
+    if (!v || !v.time) return null;
+    const m = v.time.match(/^([+-])(\d+)-(\d\d)-(\d\d)/); if (!m) return null;
+    const year = (m[1] === '-' ? -1 : 1) * parseInt(m[2], 10);
+    return { year, month: v.precision >= 10 && +m[3] ? +m[3] : null, day: v.precision >= 11 && +m[4] ? +m[4] : null };
+  }
+  async function lookup(title) {
+    const pp = await getJSON(`https://en.wikipedia.org/w/api.php?action=query&prop=pageprops&ppprop=wikibase_item&redirects=1&format=json&origin=*&titles=${encodeURIComponent(title.replace(/_/g, ' '))}`);
+    const pg = pp.query && pp.query.pages && Object.values(pp.query.pages)[0];
+    const qid = pg && pg.pageprops && pg.pageprops.wikibase_item; if (!qid) return null;
+    const ent = (await getJSON(`https://www.wikidata.org/w/api.php?action=wbgetentities&ids=${qid}&props=claims&format=json&origin=*`)).entities[qid];
+    const born = parseTime(claim(ent, 'P569')), died = parseTime(claim(ent, 'P570'));
+    const bp = claim(ent, 'P19'), dp = claim(ent, 'P20');
+    const ids = [...new Set([bp && bp.id, dp && dp.id].filter(Boolean))];
+    const pl = {};
+    if (ids.length) {
+      const pe = (await getJSON(`https://www.wikidata.org/w/api.php?action=wbgetentities&ids=${ids.join('|')}&props=labels|claims&languages=en&format=json&origin=*`)).entities;
+      const cids = new Set();
+      for (const [id, e] of Object.entries(pe)) {
+        const co = claim(e, 'P625'), ct = claim(e, 'P17');
+        pl[id] = { name: e.labels && e.labels.en ? e.labels.en.value : null, lat: co ? co.latitude : null, lon: co ? co.longitude : null, countryId: ct ? ct.id : null };
+        if (ct && ct.id !== id) cids.add(ct.id);
+      }
+      if (cids.size) {
+        const ce = (await getJSON(`https://www.wikidata.org/w/api.php?action=wbgetentities&ids=${[...cids].join('|')}&props=labels&languages=en&format=json&origin=*`)).entities;
+        Object.values(pl).forEach(p => { if (p.countryId && ce[p.countryId] && ce[p.countryId].labels.en) p.country = ce[p.countryId].labels.en.value; });
+      }
+    }
+    return { qid, born: born && { ...born, place: bp ? pl[bp.id] : null }, died: died && { ...died, place: dp ? pl[dp.id] : null } };
+  }
+  function life(title) {
+    if (!lifeCache.has(title)) lifeCache.set(title, lookup(title).catch(() => null));
+    return lifeCache.get(title);
+  }
+  function fmtDate(d) { if (!d) return ''; const y = d.year < 0 ? `${-d.year} BC` : d.year; return [d.day, d.month ? M[d.month - 1] : null, y].filter(Boolean).join(' '); }
+  function fmtPlace(p) { if (!p || !p.name) return ''; return p.country && p.country !== p.name ? `${p.name}, ${p.country}` : p.name; }
+  function ageAt(b, d) {
+    if (!b) return null;
+    const now = new Date(), e = d || { year: now.getFullYear(), month: now.getMonth() + 1, day: now.getDate() };
+    let a = e.year - b.year;
+    if (b.month && e.month && (e.month < b.month || (e.month === b.month && b.day && e.day && e.day < b.day))) a--;
+    return a;
+  }
+
+  // ── Lookups in Weft's own data ──
+  const evById = id => D.events.find(e => e.id === id);
+  const evKey = e => e.year * 10000 + e.month * 100 + e.day;
+  function eventsWithPerson(t) { return D.events.filter(e => (e.people || []).includes(t)).sort((a, b) => evKey(a) - evKey(b)); }
+  function eventsAtPlace(k) { return D.events.filter(e => e.place === k).sort((a, b) => evKey(a) - evKey(b)); }
+  function placeKeyByName(name) {
+    if (!name) return null;
+    const n = name.toLowerCase();
+    return Object.keys(D.places).find(k => { const pn = D.places[k].name.toLowerCase(); return pn === n || pn.split(/[ ,(]/)[0] === n; }) || null;
+  }
+
+  // ── Chips on an event card ──
+  function renderChips(container, ev) {
+    container.innerHTML = '';
+    const ppl = ev.people || [], pk = ev.place, pl = pk && D.places[pk];
+    if (!ppl.length && !pl) return;
+    const lab = document.createElement('div'); lab.className = 'who-label'; lab.textContent = 'Who & where'; container.appendChild(lab);
+    ppl.forEach(t => {
+      const p = D.people[t]; if (!p) return;
+      const b = document.createElement('button'); b.className = 'who-chip';
+      b.innerHTML = `<span class="wi">&#128100;</span><span>${esc(p.name)}</span>`;
+      b.addEventListener('click', () => openPerson(t));
+      container.appendChild(b);
+    });
+    if (pl) {
+      const b = document.createElement('button'); b.className = 'who-chip place';
+      b.innerHTML = `<span class="wi">&#128205;</span><span>${esc(pl.name)}</span>`;
+      b.addEventListener('click', () => openPlace(pk));
+      container.appendChild(b);
+    }
+  }
+
+  function eventRow(e) {
+    const d = D.domains[e.domain] || { color: '#888' };
+    const b = document.createElement('button'); b.className = 'wp-ev';
+    b.innerHTML = `<span class="d" style="background:${d.color}"></span><span>${esc(e.title)}</span><span class="y">${e.year}</span>`;
+    b.addEventListener('click', () => onJump(e.id));
+    return b;
+  }
+
+  // ── Person panel ──
+  function openPerson(t) {
+    const p = D.people[t]; if (!p) return;
+    const evs = eventsWithPerson(t);
+    body().innerHTML = `
+      <div class="wp-kind">Person</div>
+      <div class="wp-name">${esc(p.name)}</div>
+      <div class="wp-desc">${esc(p.desc)}</div>
+      <div class="wp-loading" id="wpLife">Looking up birth and death on Wikidata&hellip;</div>
+      <div class="wp-sec">In Weft &middot; ${evs.length} event${evs.length === 1 ? '' : 's'}</div>
+      <div class="wp-events" id="wpEvents"></div>
+      <a class="wp-link" href="${esc(p.wiki)}" target="_blank" rel="noopener">&rarr; Wikipedia</a>`;
+    const list = body().querySelector('#wpEvents');
+    evs.forEach(e => list.appendChild(eventRow(e)));
+    panel().classList.add('on'); panel().scrollTop = 0;
+    onPerson(t, null, evs);
+    life(t).then(L => {
+      const slot = body().querySelector('#wpLife');
+      if (!slot || body().querySelector('.wp-name').textContent !== p.name) return;
+      if (!L || (!L.born && !L.died)) { slot.textContent = 'Birth and death details unavailable right now.'; onPerson(t, null, evs); return; }
+      const row = (k, d, extra) => {
+        const pkey = d.place && placeKeyByName(d.place.name);
+        const placeHtml = d.place && d.place.name ? (pkey ? `<button data-pk="${pkey}">${esc(fmtPlace(d.place))}</button>` : esc(fmtPlace(d.place))) : '<span style="color:#5a6a80">place not recorded</span>';
+        return `<div class="k">${k}</div><div class="v">${esc(fmtDate(d))}${extra ? ` <small>${extra}</small>` : ''}<small>${placeHtml}</small></div>`;
+      };
+      const a = ageAt(L.born, L.died);
+      let html = '<div class="wp-life">';
+      if (L.born) html += row('Born', L.born, '');
+      if (L.died) html += row('Died', L.died, a != null ? `aged ${a}` : '');
+      else if (L.born && a != null && a < 125) html += `<div class="k">Now</div><div class="v">${a} years old</div>`;
+      html += '</div>';
+      // life bar with Weft events as ticks
+      if (L.born) {
+        const y0 = L.born.year, y1 = L.died ? L.died.year : new Date().getFullYear();
+        const span = Math.max(1, y1 - y0);
+        const ticks = evs.filter(e => e.year >= y0 && e.year <= y1).map(e => `<span class="tick" title="${esc(e.title)}" style="left:${((e.year - y0) / span * 100).toFixed(1)}%"></span>`).join('');
+        html += `<div class="wp-bar"><span class="span" style="left:0;right:0"></span>${ticks}</div><div class="wp-bar-l"><span>${y0 < 0 ? -y0 + ' BC' : y0}</span><span>${L.died ? y1 : 'today'}</span></div>`;
+      }
+      slot.outerHTML = html + '<div class="wp-note">Birth and death details from Wikidata.</div>';
+      body().querySelectorAll('[data-pk]').forEach(b => b.addEventListener('click', () => openPlace(b.dataset.pk)));
+      onPerson(t, L, evs);
+    });
+  }
+
+  // ── Place panel ──
+  function openPlace(k) {
+    const pl = D.places[k]; if (!pl) return;
+    const evs = eventsAtPlace(k);
+    const coords = pl.lat != null ? `${Math.abs(pl.lat).toFixed(2)}&deg;${pl.lat >= 0 ? 'N' : 'S'}, ${Math.abs(pl.lon).toFixed(2)}&deg;${pl.lon >= 0 ? 'E' : 'W'}` : '';
+    // People in Weft who were born or died here (from what we've already looked up)
+    body().innerHTML = `
+      <div class="wp-kind">Place</div>
+      <div class="wp-name">${esc(pl.name)}</div>
+      <div class="wp-desc">${esc(pl.country !== '—' ? pl.country : '')}${coords ? ` &middot; ${coords}` : ''}</div>
+      <div class="wp-sec">Happened here &middot; ${evs.length} event${evs.length === 1 ? '' : 's'}</div>
+      <div class="wp-events" id="wpEvents"></div>
+      <div class="wp-sec" id="wpLivesH" style="display:none">Lives that began or ended here</div>
+      <div class="wp-events" id="wpLives"></div>`;
+    const list = body().querySelector('#wpEvents');
+    evs.forEach(e => list.appendChild(eventRow(e)));
+    panel().classList.add('on'); panel().scrollTop = 0;
+    onClose();
+    // Check the people already looked up this session for births/deaths here
+    const lives = body().querySelector('#wpLives');
+    lifeCache.forEach((prom, t) => prom.then(L => {
+      if (!L || !body().querySelector('#wpLives')) return;
+      [['born', L.born], ['died', L.died]].forEach(([kind, d]) => {
+        if (d && d.place && placeKeyByName(d.place.name) === k) {
+          body().querySelector('#wpLivesH').style.display = '';
+          const b = document.createElement('button'); b.className = 'wp-ev';
+          b.innerHTML = `<span class="d" style="background:#e8c878"></span><span>${esc(D.people[t].name)} ${kind} here</span><span class="y">${d.year}</span>`;
+          b.addEventListener('click', () => openPerson(t));
+          lives.appendChild(b);
+        }
+      });
+    }));
+  }
+
+  return { init, renderChips, openPerson, openPlace, close, life, fmtDate, fmtPlace };
+})();
+</script>
+<!--/WEFT-WHO-->
 
 <script type="importmap">
 { "imports": { "three": "./vendor/three.module.js", "three/addons/controls/OrbitControls.js": "./vendor/OrbitControls.js" } }
@@ -132,26 +367,26 @@ const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x080c14);
-scene.fog = new THREE.Fog(0x080c14, 420, 1400);
-const camera = new THREE.PerspectiveCamera(55, 1, 0.1, 3000);
+scene.fog = new THREE.Fog(0x080c14, 900, 5200);
+const camera = new THREE.PerspectiveCamera(55, 1, 0.5, 12000);
 camera.position.set(40, 120, 330);
 const controls = new OrbitControls(camera, canvas);
 controls.enableDamping = true;
 controls.dampingFactor = 0.08;
-controls.maxDistance = 900;
-controls.minDistance = 20;
+controls.maxDistance = 5000;
+controls.minDistance = 25;
 
 // Stars
 {
   const g = new THREE.BufferGeometry();
-  const n = 1600, pos = new Float32Array(n * 3);
+  const n = 6000, pos = new Float32Array(n * 3);
   for (let i = 0; i < n; i++) {
-    pos[i*3] = (Math.random()-0.5) * 1400;
-    pos[i*3+1] = (Math.random()-0.5) * 900;
-    pos[i*3+2] = (Math.random()-0.5) * 1400;
+    pos[i*3] = (Math.random()-0.5) * 12000;
+    pos[i*3+1] = (Math.random()-0.5) * 6000;
+    pos[i*3+2] = (Math.random()-0.5) * 12000;
   }
   g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-  scene.add(new THREE.Points(g, new THREE.PointsMaterial({ color: 0xb4d2ff, size: 1.1, transparent: true, opacity: 0.55, sizeAttenuation: true })));
+  scene.add(new THREE.Points(g, new THREE.PointsMaterial({ color: 0xb4d2ff, size: 1.5, transparent: true, opacity: 0.6, sizeAttenuation: false, fog: false })));
 }
 
 const world = new THREE.Group();
@@ -171,12 +406,12 @@ function textSprite(text, { size = 26, color = '#c8d4e8', mono = false } = {}) {
   const t = new THREE.CanvasTexture(c);
   t.colorSpace = THREE.SRGBColorSpace;
   const m = new THREE.Sprite(new THREE.SpriteMaterial({ map: t, transparent: true, depthWrite: false }));
-  m.scale.set(w / 10, (size + 18) / 10, 1);
+  m.scale.set(w / 10 * LABEL_K, (size + 18) / 10 * LABEL_K, 1);
   return m;
 }
 
 // Layout constants
-const LANE_Z = 9, GROUP_EXTRA = 7, STAGGER = 17;
+const LANE_Z = 20, GROUP_EXTRA = 18, STAGGER = 42, LABEL_K = 2.4;
 const DEPTH = 24 * LANE_Z + 4 * GROUP_EXTRA;
 let MONTH_W = 9; // set per era in build()
 let halos = [];
@@ -195,7 +430,7 @@ function build() {
   world.clear();
   pickables = [];
   const [y0, y1] = ERAS[era];
-  MONTH_W = (y1 - y0) > 0 ? 5 : 14;
+  MONTH_W = (y1 - y0) > 0 ? 16 : 48;
   const events = ALL_EVENTS.filter(e => e.year >= y0 && e.year <= y1);
   const total = (y1 - y0 + 1) * 12 * MONTH_W;
   const xL = -total / 2, xR = total / 2;
@@ -214,7 +449,7 @@ function build() {
 
       if (li === 0) {
         const gl = textSprite(grp.name, { size: 30, color: '#8a9ab8', mono: true });
-        gl.position.set(xL - 16, y + 11, z);
+        gl.position.set(xL - 40, y + 26, z);
         world.add(gl);
       }
       // faint lane strand
@@ -222,14 +457,14 @@ function build() {
       world.add(new THREE.Line(lg, new THREE.LineBasicMaterial({ color: col, transparent: true, opacity: 0.12 })));
       // lane label
       const ll = textSprite(d.label, { size: 20, color: d.color });
-      ll.position.set(xL - 4 - ll.scale.x / 2, y + 2.2, z);
+      ll.position.set(xL - 10 - ll.scale.x / 2, y + 5, z);
       world.add(ll);
       // events, scattered slightly off the strand like stars around a filament
       events.filter(e => e.domain === key).forEach(ev => {
         const x = dateX(ev.year, ev.month, ev.day, y0, y1);
-        const jy = (seeded(ev.id) - 0.5) * 4.5;
-        const jz = (seeded(ev.id * 7 + 3) - 0.5) * 6;
-        const r = 1.0 + seeded(ev.id * 13 + 1) * 0.7;
+        const jy = (seeded(ev.id) - 0.5) * 11;
+        const jz = (seeded(ev.id * 7 + 3) - 0.5) * 15;
+        const r = 1.7 + seeded(ev.id * 13 + 1) * 1.3;
         const mesh = new THREE.Mesh(
           new THREE.SphereGeometry(r, 18, 12),
           new THREE.MeshBasicMaterial({ color: col })
@@ -253,8 +488,8 @@ function build() {
   // year markers floating in front of the cloud
   for (let yr = y0; yr <= y1; yr++) {
     const yx = dateX(yr, 1, 1, y0, y1);
-    const yl = textSprite(String(yr), { size: 22, color: '#5a6a80', mono: true });
-    yl.position.set(yx + (6 * MONTH_W), -STAGGER - 14, 12);
+    const yl = textSprite(String(yr), { size: 34, color: '#6a7a94', mono: true });
+    yl.position.set(yx + (6 * MONTH_W), -STAGGER - 34, 40);
     world.add(yl);
   }
 
@@ -267,12 +502,13 @@ function build() {
       const a = posById.get(ev.id), b = posById.get(id2);
       if (!a || !b) return;
       const mid = a.clone().add(b).multiplyScalar(0.5);
-      mid.y += Math.min(26, a.distanceTo(b) * 0.22 + 4);
+      mid.y += Math.min(110, a.distanceTo(b) * 0.2 + 12);
       const curve = new THREE.QuadraticBezierCurve3(a, mid, b);
       const geo = new THREE.BufferGeometry().setFromPoints(curve.getPoints(40));
       world.add(new THREE.Line(geo, new THREE.LineBasicMaterial({ color: 0xcfd8ff, transparent: true, opacity: 0.5 })));
     });
   });
+  if (typeof drawLife === 'function') drawLife();
 }
 
 // halo texture
@@ -343,19 +579,21 @@ function openCard(ev) {
     linked.forEach(e2 => {
       const chip = document.createElement('button'); chip.className = 'ct-chip';
       chip.innerHTML = `<span class="ct-dot" style="background:${DOMAINS[e2.domain].color}"></span><span>${e2.title}</span><span class="ct-year">${e2.year}</span>`;
-      chip.addEventListener('click', () => {
-        const [y0, y1] = ERAS[era];
-        if (e2.year < y0 || e2.year > y1) {
-          const target = Object.entries(ERAS).find(([, [a, b]]) => e2.year >= a && e2.year <= b);
-          if (target) setEra(target[0]);
-        }
-        openCard(e2);
-        focusEvent(e2);
-      });
+      chip.addEventListener('click', () => jumpTo(e2));
       ct.appendChild(chip);
     });
   }
+  WeftWho.renderChips(document.getElementById('cWho'), ev);
   card.classList.add('on');
+}
+function jumpTo(e2) {
+  const [y0, y1] = ERAS[era];
+  if (e2.year < y0 || e2.year > y1) {
+    const target = Object.entries(ERAS).find(([, [a, b]]) => e2.year >= a && e2.year <= b);
+    if (target) setEra(target[0]);
+  }
+  openCard(e2);
+  focusEvent(e2);
 }
 
 function focusEvent(ev) {
@@ -364,8 +602,91 @@ function focusEvent(ev) {
   const p = mesh.position;
   controls.target.copy(p);
   const dir = camera.position.clone().sub(controls.target).normalize();
-  camera.position.copy(p.clone().add(dir.multiplyScalar(60)));
+  camera.position.copy(p.clone().add(dir.multiplyScalar(150)));
 }
+
+
+// ── LIFELINES (people) ─────────────────────────────────────────────────────────
+const lifeGroup = new THREE.Group();
+scene.add(lifeGroup);
+let lifeState = null, lifeLit = [];
+const GOLD = 0xe8c878;
+function clearLife() {
+  lifeGroup.traverse(o => { if (o.geometry) o.geometry.dispose(); if (o.material) { if (o.material.map) o.material.map.dispose(); o.material.dispose(); } });
+  lifeGroup.clear();
+  lifeLit.forEach(m => m.scale.setScalar(1)); lifeLit = [];
+}
+function drawLife() {
+  clearLife();
+  if (!lifeState) return;
+  const { title, L, evs } = lifeState;
+  const [y0, y1] = ERAS[era];
+  const { xL, xR } = eraBounds();
+  const LY = STAGGER + 95, LZ = -DEPTH / 2;
+  const pad = 40;
+  const clampX = x => Math.max(xL - pad, Math.min(xR + pad, x));
+  const xOf = o => dateX(o.year, o.month || 7, o.day || 1, y0, y1);
+  const inEra = evs.filter(e => e.year >= y0 && e.year <= y1);
+  const meshes = inEra.map(e => pickables.find(m => m.userData.ev.id === e.id)).filter(Boolean);
+  const b = L && L.born, d = L && L.died;
+  let x0 = b ? xOf(b) : (meshes.length ? Math.min(...meshes.map(m => m.position.x)) : null);
+  let x1 = d ? xOf(d) : (b ? xR + pad : (meshes.length ? Math.max(...meshes.map(m => m.position.x)) : null));
+  if (x0 == null || x1 == null || x1 < xL - pad || x0 > xR + pad) {
+    // This life doesn't cross the era on screen: just a floating name tag
+    const tag = textSprite(`${WEFT_PEOPLE[title].name} — not in this era`, { size: 24, color: '#e8c878' });
+    tag.position.set(controls.target.x, LY, LZ); lifeGroup.add(tag);
+    return;
+  }
+  const a = clampX(x0), z = clampX(x1);
+  // the lifeline itself: a thin glowing tube
+  const tube = new THREE.Mesh(
+    new THREE.TubeGeometry(new THREE.LineCurve3(new THREE.Vector3(a, LY, LZ), new THREE.Vector3(z, LY, LZ)), 1, 0.9, 8, false),
+    new THREE.MeshBasicMaterial({ color: GOLD, transparent: true, opacity: 0.85 })
+  );
+  lifeGroup.add(tube);
+  const name = WEFT_PEOPLE[title].name;
+  const span = `${b ? WeftWho.fmtDate({ year: b.year }) : '?'}–${d ? d.year : (b ? 'today' : '?')}`;
+  const nameTag = textSprite(`${name}  ${span}`, { size: 30, color: '#e8c878' });
+  nameTag.position.set(a + nameTag.scale.x / 2, LY + 16, LZ); lifeGroup.add(nameTag);
+  // ends: a marker if birth/death falls inside the era, an arrow-label if outside
+  const end = (o, kind, x) => {
+    const inside = x >= xL && x <= xR;
+    const where = o.place ? WeftWho.fmtPlace(o.place) : '';
+    if (inside) {
+      const s = new THREE.Mesh(new THREE.SphereGeometry(3.4, 20, 14), new THREE.MeshBasicMaterial({ color: kind === 'Born' ? 0xffffff : 0xe8c878 }));
+      s.position.set(x, LY, LZ); lifeGroup.add(s);
+      const h = new THREE.Sprite(new THREE.SpriteMaterial({ map: haloTex, color: GOLD, transparent: true, opacity: 0.6, depthWrite: false }));
+      h.scale.set(26, 26, 1); h.position.copy(s.position); lifeGroup.add(h);
+    }
+    const txt = inside ? `${kind} ${WeftWho.fmtDate(o)}${where ? ' · ' + where : ''}` :
+      (kind === 'Born' ? `← born ${o.year}${where ? ', ' + where : ''}` : `died ${o.year}${where ? ', ' + where : ''} →`);
+    const t = textSprite(txt, { size: 22, color: '#c8b080' });
+    t.position.set(x + (kind === 'Born' ? t.scale.x / 2 : -t.scale.x / 2), LY - 12, LZ); lifeGroup.add(t);
+  };
+  if (b) end(b, 'Born', a);
+  if (d) end(d, 'Died', z);
+  // On first showing (and again once Wikidata answers), move the camera to frame the whole life
+  const key = title + (L ? ':L' : '') + ':' + era;
+  if (lifeState.framed !== key) {
+    lifeState.framed = key;
+    const cx = (a + z) / 2, cy = LY * 0.45;
+    const fit = ((z - a) / 2 + 90) / (Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * Math.max(camera.aspect, 0.6));
+    const dist = Math.min(Math.max(fit + DEPTH / 2, 380), 2200);
+    const dir = camera.position.clone().sub(controls.target).normalize();
+    controls.target.set(cx, cy, LZ);
+    camera.position.copy(controls.target).add(dir.multiplyScalar(dist));
+  }
+  // drop a dashed thread from the lifeline to each of their events in this era
+  meshes.forEach(m => {
+    const g = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(m.position.x, LY, LZ), m.position.clone()]);
+    const ln = new THREE.Line(g, new THREE.LineDashedMaterial({ color: GOLD, dashSize: 4, gapSize: 3, transparent: true, opacity: 0.75 }));
+    ln.computeLineDistances(); lifeGroup.add(ln);
+    const k = new THREE.Mesh(new THREE.SphereGeometry(1.6, 12, 8), new THREE.MeshBasicMaterial({ color: GOLD }));
+    k.position.set(m.position.x, LY, LZ); lifeGroup.add(k);
+    m.scale.setScalar(1.7); lifeLit.push(m);
+  });
+}
+let WEFT_PEOPLE = {};
 
 // ── ERA ────────────────────────────────────────────────────────────────────────
 function setEra(e) {
@@ -373,12 +694,16 @@ function setEra(e) {
   document.querySelectorAll('.era-btn').forEach(b => b.classList.toggle('active', b.dataset.era === e));
   build();
   // Frame the whole era: pull back far enough that its full width fits the screen
+  // Fly in: frame roughly two and a half years (or the whole of a single year), starting at the era's beginning
   const [a0, a1] = ERAS[e];
-  const halfW = ((a1 - a0 + 1) * 12 * MONTH_W) / 2 + 70;
+  const spanMonths = Math.min((a1 - a0 + 1) * 12, 30);
+  const halfW = (spanMonths * MONTH_W) / 2 + 60;
   const fit = halfW / (Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * Math.max(camera.aspect, 0.6));
-  const dist = fit + DEPTH / 2; // measured from the cloud's centre, so the front layer fits too
-  controls.target.set(0, 0, -DEPTH / 2);
-  camera.position.set(dist * 0.18, dist * 0.3, -DEPTH / 2 + dist);
+  const dist = fit + DEPTH / 2;
+  const { xL } = eraBounds();
+  const tx = (a1 > a0) ? xL + halfW - 40 : 0;
+  controls.target.set(tx, 0, -DEPTH / 2);
+  camera.position.set(tx + dist * 0.28, dist * 0.32, -DEPTH / 2 + dist * 0.92);
   card.classList.remove('on');
 }
 document.querySelectorAll('.era-btn').forEach(b => b.addEventListener('click', () => setEra(b.dataset.era)));
@@ -474,6 +799,12 @@ function loop(t = 0) {
         if (!THREAD_MAP.has(t)) THREAD_MAP.set(t, new Set());
         THREAD_MAP.get(t).add(e.id);
       });
+    });
+    WEFT_PEOPLE = data.people || {};
+    WeftWho.init(data, {
+      onJump: id => { if (innerWidth < 700) WeftWho.close(); jumpTo(ALL_EVENTS.find(e => e.id === id)); },
+      onPerson: (t, L, evs) => { lifeState = { title: t, L, evs }; drawLife(); },
+      onClose: () => { lifeState = null; drawLife(); },
     });
     setEra('1980s');
     loop();
