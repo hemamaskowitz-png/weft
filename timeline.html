@@ -1,0 +1,1280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#080c14">
+<title>Weft</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600&family=Space+Mono:wght@400;700&display=swap');
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #080c14; --bg-panel: #0e1520; --bg-card: #131d2e;
+    --border: rgba(255,255,255,0.08); --text: #c8d4e8;
+    --text-dim: #5a6a80; --text-bright: #e8f0ff;
+    --node-size: 18px;
+    --tap: 44px;
+  }
+  html, body { height: 100%; background: var(--bg); color: var(--text); font-family: 'Space Grotesk', sans-serif; overflow-x: hidden; -webkit-tap-highlight-color: transparent; }
+  #stars { position: fixed; inset: 0; pointer-events: none; z-index: 0; }
+  .shell { position: relative; z-index: 1; min-height: 100vh; display: flex; flex-direction: column; }
+
+  /* LOADING */
+  #loadScreen { position: fixed; inset: 0; background: var(--bg); display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 1rem; z-index: 100; transition: opacity 0.4s; }
+  #loadScreen.hidden { opacity: 0; pointer-events: none; }
+  .load-title { font-family: 'Space Mono', monospace; font-size: 1.4rem; color: var(--text-bright); letter-spacing: 0.15em; text-transform: uppercase; }
+  .load-sub { font-size: 0.7rem; color: var(--text-dim); }
+  .load-error { color: #e05c5c; font-size: 0.75rem; text-align: center; max-width: 280px; }
+
+  /* HEADER */
+  header { padding: 0.9rem 1rem 0.7rem; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border); gap: 0.5rem; }
+  .year-display { display: flex; align-items: center; gap: 0.5rem; }
+  .year-nav-btn { background: rgba(255,255,255,0.05); border: 1px solid var(--border); color: var(--text-dim); width: var(--tap); height: var(--tap); border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; flex-shrink: 0; transition: all 0.15s; touch-action: manipulation; }
+  .year-nav-btn:active { background: rgba(122,92,224,0.2); }
+  .year-nav-btn:disabled { opacity: 0.2; cursor: default; }
+  .year-label { font-family: 'Space Mono', monospace; font-size: clamp(2.2rem, 10vw, 3.5rem); font-weight: 700; line-height: 1; color: transparent; background: linear-gradient(135deg, #4a7fc0 0%, #7a5ce0 50%, #c05ca0 100%); -webkit-background-clip: text; background-clip: text; letter-spacing: -0.03em; }
+  .header-right { text-align: right; flex-shrink: 0; }
+  .header-right h1 { font-size: 0.6rem; font-weight: 500; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.12em; }
+  .header-right p { font-size: 0.55rem; color: var(--text-dim); margin-top: 0.1rem; }
+  .about-link { color: #e8c878; text-decoration: none; }
+  .about-link:hover { text-decoration: underline; }
+  .ws-input::-webkit-search-cancel-button { display: none; }
+  @media (max-width: 599px) { header { flex-wrap: wrap; } .header-right p { display: none; }
+    .controls { flex-wrap: wrap; } .slider-wrap { flex: 1 1 100%; order: -1; } .view-toggle { margin-left: auto; } }
+
+  /* CONTROLS BAR */
+  .controls { padding: 0.5rem 1rem; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 0.5rem; }
+  .slider-wrap { display: flex; align-items: center; gap: 0.4rem; flex: 1; }
+  .slider-label { font-family: 'Space Mono', monospace; font-size: 0.55rem; color: var(--text-dim); white-space: nowrap; }
+  #yearSlider { flex: 1; height: 4px; -webkit-appearance: none; appearance: none; background: var(--border); border-radius: 2px; outline: none; cursor: pointer; }
+  #yearSlider::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: linear-gradient(135deg,#7a5ce0,#c05ca0); cursor: pointer; box-shadow: 0 0 10px rgba(122,92,224,0.6); }
+  .jump-select { background: var(--bg-card); border: 1px solid var(--border); color: var(--text); font-family: 'Space Mono', monospace; font-size: 0.65rem; padding: 0.4rem 0.4rem; border-radius: 6px; cursor: pointer; outline: none; min-height: var(--tap); }
+  .view-toggle { display: flex; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+  .toggle-btn { background: none; border: none; color: var(--text-dim); font-family: 'Space Mono', monospace; font-size: 0.58rem; text-transform: uppercase; letter-spacing: 0.06em; padding: 0 0.6rem; cursor: pointer; transition: all 0.15s; white-space: nowrap; min-height: var(--tap); touch-action: manipulation; }
+  .toggle-btn:first-child { border-right: 1px solid var(--border); }
+  .toggle-btn.active { background: rgba(122,92,224,0.25); color: var(--text-bright); }
+
+  /* FILTER PANEL */
+  .filter-panel { padding: 0.6rem 1rem; border-bottom: 1px solid var(--border); background: rgba(14,21,32,0.7); }
+  .filter-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem; }
+  .filter-title { font-family: 'Space Mono', monospace; font-size: 0.58rem; text-transform: uppercase; letter-spacing: 0.12em; color: var(--text-dim); }
+  .filter-actions { display: flex; gap: 0.4rem; }
+  .filter-action-btn { background: none; border: 1px solid var(--border); color: var(--text-dim); font-family: 'Space Mono', monospace; font-size: 0.58rem; text-transform: uppercase; padding: 0.3rem 0.55rem; border-radius: 4px; cursor: pointer; min-height: 32px; touch-action: manipulation; }
+  .filter-action-btn:active { background: rgba(255,255,255,0.07); }
+  .filter-grid { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+  .filter-pill { display: flex; align-items: center; gap: 0.35rem; padding: 0.35rem 0.65rem 0.35rem 0.45rem; border-radius: 20px; border: 1px solid rgba(255,255,255,0.1); cursor: pointer; transition: all 0.15s; user-select: none; background: rgba(255,255,255,0.03); min-height: 34px; touch-action: manipulation; }
+  .filter-pill:active { transform: scale(0.96); }
+  .filter-pill.active { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.2); }
+  .filter-pill.inactive { opacity: 0.3; }
+  .pill-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .pill-icon { font-size: 0.85rem; line-height: 1; }
+  .pill-label { font-size: 0.7rem; font-weight: 500; color: var(--text-bright); white-space: nowrap; }
+  .pill-count { font-family: 'Space Mono', monospace; font-size: 0.6rem; color: var(--text-dim); margin-left: 0.15rem; }
+
+  /* STAGE */
+  .stage { flex: 1; display: flex; flex-direction: column; padding: 0.9rem 1rem 0.8rem; position: relative; }
+  .month-row { display: grid; grid-template-columns: repeat(12, 1fr); margin-bottom: 0.3rem; }
+  .month-label { font-family: 'Space Mono', monospace; font-size: 0.52rem; color: var(--text-dim); text-transform: uppercase; text-align: center; cursor: pointer; padding: 0.35rem 0; min-height: 32px; display: flex; align-items: center; justify-content: center; touch-action: manipulation; transition: color 0.15s; }
+  .month-label:active, .month-label.zoomed { color: var(--text-bright); }
+  .month-label.zoomed { font-weight: 700; }
+
+  /* TIMELINE TRACK */
+  .timeline-track { position: relative; height: 200px; display: flex; align-items: center; }
+  .track-line { position: absolute; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, rgba(74,127,192,0.15) 0%, rgba(122,92,224,0.35) 50%, rgba(192,92,160,0.15) 100%); border-radius: 2px; }
+  .zoom-band { position: absolute; top: 0; bottom: 0; background: rgba(122,92,224,0.06); border-left: 1px solid rgba(122,92,224,0.25); border-right: 1px solid rgba(122,92,224,0.25); pointer-events: none; display: none; }
+  .zoom-band.visible { display: block; }
+  .tick-marks { position: absolute; left: 0; right: 0; top: 50%; transform: translateY(-50%); display: grid; grid-template-columns: repeat(12, 1fr); pointer-events: none; }
+  .tick { display: flex; justify-content: center; }
+  .tick::after { content: ''; display: block; width: 1px; height: 10px; background: var(--border); }
+  .nodes-layer { position: absolute; left: 0; right: 0; top: 0; bottom: 0; }
+
+  /* NODES */
+  .node { position: absolute; transform: translate(-50%,-50%); top: 50%; width: var(--node-size); height: var(--node-size); border-radius: 50%; cursor: pointer; z-index: 2; transition: left 0.3s ease; }
+  .node-tap-area { position: absolute; inset: -14px; border-radius: 50%; }
+  .node::after { content: ''; position: absolute; inset: -4px; border-radius: 50%; background: inherit; opacity: 0.2; animation: pulse 2.5s ease-in-out infinite; animation-delay: var(--delay,0s); }
+  @keyframes pulse { 0%,100%{transform:scale(1);opacity:0.2} 50%{transform:scale(1.8);opacity:0} }
+  .node.upper { top: 22%; }
+  .node.lower { top: 78%; }
+  .node.mid { top: 50%; }
+  .node.active-node { transform: translate(-50%,-50%) scale(2); z-index: 10; filter: brightness(1.6); }
+  .node.active-node::after { animation: pulse-active 0.85s ease-in-out infinite; opacity: 0.5; }
+  @keyframes pulse-active { 0%,100%{transform:scale(1);opacity:0.5} 50%{transform:scale(2.2);opacity:0} }
+  .node.hidden { opacity: 0.05; pointer-events: none; }
+
+  /* LANE VIEW */
+  .lane-view { display: none; flex-direction: column; }
+  .lane-view.visible { display: flex; }
+  .single-view.hidden { display: none; }
+  .lane { display: flex; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.04); min-height: 44px; }
+  .lane:last-child { border-bottom: none; }
+  .lane-label-col { width: 46px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+  .lane-icon { font-size: 1.1rem; }
+  .lane-track { flex: 1; position: relative; height: 100%; min-height: 44px; display: flex; align-items: center; overflow: hidden; }
+  .lane-line { position: absolute; left: 0; right: 0; height: 2px; opacity: 0.2; }
+  .lane-nodes { position: absolute; left: 0; right: 0; top: 0; bottom: 0; }
+  .lane-empty .lane-line { opacity: 0.06; }
+  .lane-empty .lane-icon, .lane-empty .lane-name { opacity: 0.3; }
+
+  /* EMPTY STATE */
+  .empty-state { display: none; flex-direction: column; align-items: center; justify-content: center; gap: 0.5rem; padding: 2rem; text-align: center; flex: 1; }
+  .empty-state.visible { display: flex; }
+  .empty-icon { font-size: 2rem; opacity: 0.3; }
+  .empty-text { font-size: 0.75rem; color: var(--text-dim); }
+
+  /* FOOTER */
+  footer { padding: 0.5rem 1rem; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+  .footer-info { font-family: 'Space Mono', monospace; font-size: 0.5rem; color: var(--text-dim); }
+
+  /* MODAL */
+  .modal-backdrop { position: fixed; inset: 0; background: rgba(4,8,16,0.85); z-index: 50; display: flex; align-items: flex-end; opacity: 0; pointer-events: none; transition: opacity 0.25s; backdrop-filter: blur(4px); }
+  .modal-backdrop.visible { opacity: 1; pointer-events: all; }
+  .modal-sheet { background: var(--bg-card); border-radius: 20px 20px 0 0; border: 1px solid var(--border); border-bottom: none; width: 100%; max-height: 85vh; overflow-y: auto; transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.32,0.72,0,1); }
+  .modal-backdrop.visible .modal-sheet { transform: translateY(0); }
+  .drag-handle { width: 36px; height: 4px; background: var(--border); border-radius: 2px; margin: 0.75rem auto 0; }
+  .modal-image-wrap { width: 100%; aspect-ratio: 16/9; overflow: hidden; background: var(--bg-panel); position: relative; }
+  .modal-image { width: 100%; height: 100%; object-fit: cover; }
+  .modal-no-image { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 3rem; opacity: 0.3; }
+  .modal-image-credit { position: absolute; bottom: 0.4rem; right: 0.5rem; font-size: 0.55rem; text-decoration: none; color: rgba(255,255,255,0.75); background: rgba(0,0,0,0.5); padding: 0.15rem 0.3rem; border-radius: 3px; }
+  .modal-body { padding: 1rem 1rem 2rem; }
+  .modal-domain { display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.5rem; }
+  .modal-domain-icon { font-size: 0.9rem; }
+  .modal-domain-label { font-family: 'Space Mono', monospace; font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.1em; }
+  .modal-title { font-size: 1.1rem; font-weight: 600; color: var(--text-bright); line-height: 1.3; margin-bottom: 0.3rem; }
+  .modal-date { font-family: 'Space Mono', monospace; font-size: 0.6rem; color: var(--text-dim); margin-bottom: 0.8rem; }
+  .modal-text { font-size: 0.82rem; line-height: 1.65; color: var(--text); }
+  .modal-links { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 1rem; }
+  .report-link { font-family: 'Space Mono', monospace; font-size: 0.6rem; color: var(--text-dim); text-decoration: none; align-self: center; margin-left: auto; padding: 0.4rem 0; }
+  .report-link:hover { color: var(--text); text-decoration: underline; }
+  .modal-link { font-family: 'Space Mono', monospace; font-size: 0.65rem; padding: 0.4rem 0.75rem; border-radius: 6px; border: 1px solid; text-decoration: none; transition: opacity 0.15s; }
+  .modal-link:active { opacity: 0.7; }
+  .modal-nav { position: sticky; top: 0; z-index: 3; background: var(--bg-card); display: flex; align-items: center; justify-content: space-between; padding: 0.5rem 1rem; border-top: 1px solid var(--border); }
+  .modal-nav-btn { background: rgba(255,255,255,0.05); border: 1px solid var(--border); color: var(--text-dim); width: var(--tap); height: var(--tap); border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1rem; touch-action: manipulation; }
+  .modal-nav-btn:disabled { opacity: 0.2; cursor: default; }
+  .modal-close { background: none; border: none; color: var(--text-dim); font-size: 1.3rem; cursor: pointer; padding: 0.5rem; touch-action: manipulation; }
+  .nav-counter { font-family: 'Space Mono', monospace; font-size: 0.6rem; color: var(--text-dim); }
+
+  /* ART: a fine white ring marks works made in response to events */
+  .node.art { outline: 1.5px solid rgba(255,255,255,0.85); outline-offset: 2.5px; }
+
+  /* THREADS */
+  .modal-threads { margin-top: 1rem; display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center; }
+  .threads-label { width: 100%; font-family: 'Space Mono', monospace; font-size: 0.58rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-dim); }
+  .thread-chip { display: inline-flex; align-items: center; gap: 0.4rem; background: rgba(255,255,255,0.04); border: 1px solid var(--border); color: var(--text); font-size: 0.7rem; padding: 0.35rem 0.6rem; border-radius: 16px; cursor: pointer; font-family: 'Space Grotesk', sans-serif; text-align: left; transition: border-color 0.15s; }
+  .thread-chip:hover, .thread-chip:active { border-color: rgba(255,255,255,0.3); }
+  .thread-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .thread-year { font-family: 'Space Mono', monospace; font-size: 0.58rem; color: var(--text-dim); }
+
+  /* LANE NAMES & NODE LABELS (shown on desktop) */
+  .lane-name { display: none; font-size: 0.68rem; font-weight: 500; letter-spacing: 0.04em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .lane-node-label { position: absolute; top: 50%; transform: translate(13px, -50%); font-size: 0.57rem; color: #7e90ab; white-space: nowrap; max-width: 150px; overflow: hidden; text-overflow: ellipsis; pointer-events: none; display: none; line-height: 1.2; }
+  .lane-node-label.edge-r { transform: translate(calc(-100% - 13px), -50%); }
+
+  /* TOOLTIP (desktop hover) */
+  #tooltip { position: fixed; z-index: 60; background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 0.5rem 0.7rem; pointer-events: none; opacity: 0; transition: opacity 0.12s; max-width: 260px; box-shadow: 0 6px 24px rgba(0,0,0,0.5); }
+  #tooltip.visible { opacity: 1; }
+  .tip-title { font-size: 0.75rem; font-weight: 600; color: var(--text-bright); line-height: 1.3; }
+  .tip-date { font-family: 'Space Mono', monospace; font-size: 0.55rem; color: var(--text-dim); margin-top: 0.2rem; }
+
+  /* DESKTOP LAYOUT */
+  @media (min-width: 900px) {
+    :root { --node-size: 24px; }
+    header { padding: 1.1rem 2rem 0.9rem; }
+    .controls, .filter-panel { padding-left: 2rem; padding-right: 2rem; }
+    .stage { padding: 1.2rem 2rem 1.5rem; }
+    .month-label { font-size: 0.62rem; }
+    .single-view:not(.hidden) { flex: 1; display: flex; flex-direction: column; justify-content: center; }
+    .timeline-track { height: min(56vh, 480px); }
+    .lane-view.visible { flex: 1; overflow: hidden; }
+    .lane { flex: 1 1 0; min-height: 0; }
+    .lane-track { height: 100%; min-height: 0; }
+    .lane-nodes .node { width: 14px; height: 14px; }
+    .lane-label-col { width: 180px; justify-content: flex-start; gap: 0.55rem; padding-left: 0.2rem; }
+    .lane-name { display: inline-block; }
+    .lane-node-label { display: block; }
+    .modal-backdrop { align-items: center; justify-content: center; padding: 2rem; }
+    .modal-sheet { max-width: 700px; border-radius: 20px; border-bottom: 1px solid var(--border); transform: translateY(24px); }
+    .drag-handle { display: none; }
+    .modal-body { padding: 1.4rem 1.8rem 2rem; }
+    .modal-title { font-size: 1.5rem; }
+    .modal-text { font-size: 0.95rem; }
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .node:hover:not(.active-node) { transform: translate(-50%,-50%) scale(1.5); filter: brightness(1.4); z-index: 6; }
+    .filter-pill:hover { border-color: rgba(255,255,255,0.25); }
+    .year-nav-btn:hover:not(:disabled), .modal-nav-btn:hover:not(:disabled) { background: rgba(122,92,224,0.2); color: var(--text-bright); }
+    .toggle-btn:hover:not(.active) { color: var(--text); }
+    .month-label:hover { color: var(--text-bright); }
+  }
+</style>
+</head>
+<body>
+<canvas id="stars"></canvas>
+
+<div id="loadScreen">
+  <div class="load-title">WEFT</div>
+  <div class="load-sub">Loading event data…</div>
+  <div class="load-error" id="loadError" style="display:none"></div>
+</div>
+
+<div class="shell" id="app" style="display:none">
+  <header>
+    <div class="year-display">
+      <button class="year-nav-btn" id="btnPrevYear">&#8592;</button>
+      <div class="year-label" id="yearLabel">1985</div>
+      <button class="year-nav-btn" id="btnNextYear">&#8594;</button>
+    </div>
+    <div class="ws-wrap">
+      <span class="ws-ico">&#9906;</span>
+      <input class="ws-input" id="wsInput" type="search" placeholder="Search people, places, events or dates" autocomplete="off" spellcheck="false" aria-label="Search Weft">
+      <button class="ws-clear" aria-label="Clear search">&#10005;</button>
+      <div class="ws-list" id="wsList"></div>
+    </div>
+    <div class="header-right">
+      <h1><a href="about.html" class="about-link">About Weft</a></h1>
+      <p>Tap any event &middot; Filter by domain</p>
+    </div>
+  </header>
+
+  <div class="controls">
+    <div class="slider-wrap">
+      <span class="slider-label" id="sliderMin">-</span>
+      <input type="range" id="yearSlider" min="0" max="100" value="50">
+      <span class="slider-label" id="sliderMax">-</span>
+    </div>
+    <select class="jump-select" id="jumpYear"></select>
+    <div class="view-toggle">
+      <button class="toggle-btn active" id="btnSingleView">&#8212; Single</button>
+      <button class="toggle-btn" id="btnLaneView">&#8801; Lanes</button>
+      <a class="toggle-btn" id="to3d" href="index.html" style="display:flex;align-items:center;text-decoration:none;border-left:1px solid var(--border)">&#10022; 3D</a>
+    </div>
+  </div>
+
+  <div class="filter-panel">
+    <div class="filter-header">
+      <span class="filter-title">Domains</span>
+      <div class="filter-actions">
+        <button class="filter-action-btn" id="btnAllOn">All</button>
+        <button class="filter-action-btn" id="btnAllOff">None</button>
+      </div>
+    </div>
+    <div class="filter-grid" id="filterGrid"></div>
+  </div>
+
+  <div class="stage">
+    <div class="month-row" id="monthRow"></div>
+    <div class="single-view" id="singleView">
+      <div class="timeline-track">
+        <div class="track-line"></div>
+        <div class="zoom-band" id="zoomBand"></div>
+        <div class="tick-marks" id="ticks"></div>
+        <div class="nodes-layer" id="nodesLayer"></div>
+      </div>
+    </div>
+    <div class="lane-view" id="laneView"></div>
+    <div class="empty-state" id="emptyState">
+      <div class="empty-icon">✦</div>
+      <div class="empty-text">No events match the current filters</div>
+    </div>
+  </div>
+
+  <footer>
+    <span class="footer-info" id="footerInfo"></span>
+    <span class="footer-info" id="footerYear">1985</span>
+  </footer>
+</div>
+
+<!-- MODAL -->
+<div class="modal-backdrop" id="modalBackdrop">
+  <div class="modal-sheet" id="modalEl">
+    <div class="drag-handle"></div>
+    <div class="modal-image-wrap" id="modalImageWrap"></div>
+    <div class="modal-nav">
+      <button class="modal-nav-btn" id="navPrev">&#8592;</button>
+      <span class="nav-counter" id="navCounter"></span>
+      <button class="modal-close" id="modalClose">&#10005;</button>
+      <button class="modal-nav-btn" id="navNext">&#8594;</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-domain">
+        <span class="modal-domain-icon" id="modalDomainIcon"></span>
+        <span class="modal-domain-label" id="modalDomainLabel"></span>
+      </div>
+      <div class="modal-title" id="modalTitle"></div>
+      <div class="modal-date" id="modalDate"></div>
+      <div class="modal-text" id="modalText"></div>
+      <div class="modal-links" id="modalLinks"></div>
+      <div class="resp-row" id="modalResp"></div>
+      <div class="modal-threads" id="modalThreads"></div>
+      <div class="who-row" id="modalWho"></div>
+    </div>
+  </div>
+</div>
+
+<div id="tooltip"><div class="tip-title"></div><div class="tip-date"></div></div>
+
+<!--WEFT-WHO-->
+<style>
+  /* People & places — shared by 2D and 3D */
+  .who-row { margin-top: 0.9rem; display: flex; flex-wrap: wrap; gap: 0.35rem; align-items: center; }
+  .who-label { width: 100%; font-family: 'Space Mono', monospace; font-size: 0.55rem; letter-spacing: 0.12em; text-transform: uppercase; color: #5a6a80; }
+  .who-chip { display: inline-flex; align-items: center; gap: 0.35rem; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); color: #c8d4e8; font-size: 0.68rem; padding: 0.3rem 0.6rem; border-radius: 14px; cursor: pointer; font-family: 'Space Grotesk', system-ui, sans-serif; text-align: left; transition: border-color 0.15s, background 0.15s; }
+  .who-chip:hover { border-color: rgba(232,200,120,0.6); background: rgba(232,200,120,0.08); }
+  .who-chip .wi { font-size: 0.75rem; line-height: 1; }
+  .who-chip.place { border-style: dashed; }
+  .resp-row { margin-top: 0.9rem; display: flex; flex-wrap: wrap; gap: 0.35rem; }
+  .resp-label { width: 100%; font-family: 'Space Mono', monospace; font-size: 0.55rem; letter-spacing: 0.12em; text-transform: uppercase; color: #e8a8d8; }
+  .resp-chip { display: inline-flex; align-items: center; gap: 0.4rem; background: rgba(232,125,184,0.07); border: 1px solid rgba(232,125,184,0.35); color: #c8d4e8; font-size: 0.68rem; padding: 0.3rem 0.6rem; border-radius: 14px; cursor: pointer; font-family: 'Space Grotesk', system-ui, sans-serif; text-align: left; }
+  .resp-chip:hover { border-color: rgba(232,125,184,0.8); }
+  .resp-chip .d { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .resp-chip .y { font-family: 'Space Mono', monospace; font-size: 0.55rem; color: #5a6a80; }
+  .who-globe { width: 84px; height: 84px; border-radius: 50%; cursor: pointer; flex-shrink: 0; margin-right: 0.35rem; box-shadow: 0 0 18px rgba(92,160,224,0.28); transition: box-shadow 0.2s, transform 0.2s; }
+  .who-globe:hover { box-shadow: 0 0 26px rgba(232,200,120,0.55); transform: scale(1.05); }
+  .wp-globe { float: right; width: 120px; height: 120px; border-radius: 50%; margin: 0 0 0.5rem 0.6rem; box-shadow: 0 0 22px rgba(92,160,224,0.3); }
+
+  #whoPanel { position: fixed; top: 70px; left: 1rem; width: 350px; max-width: calc(100vw - 2rem); max-height: calc(100vh - 100px); overflow-y: auto; z-index: 300; background: rgba(15,22,36,0.97); border: 1px solid rgba(232,200,120,0.28); border-radius: 16px; padding: 1.1rem 1.2rem 1.2rem; display: none; box-shadow: 0 12px 48px rgba(0,0,0,0.6); backdrop-filter: blur(8px); font-family: 'Space Grotesk', system-ui, sans-serif; color: #c8d4e8; }
+  #whoPanel.on { display: block; }
+  #whoPanel .wp-close { position: absolute; top: 0.55rem; right: 0.75rem; background: none; border: none; color: #5a6a80; font-size: 1.1rem; cursor: pointer; }
+  #whoPanel .wp-close:hover { color: #e8f0ff; }
+  .wp-kind { font-family: 'Space Mono', monospace; font-size: 0.55rem; letter-spacing: 0.14em; text-transform: uppercase; color: #e8c878; margin-bottom: 0.35rem; }
+  .wp-name { font-size: 1.25rem; font-weight: 600; color: #e8f0ff; line-height: 1.2; padding-right: 1.2rem; }
+  .wp-desc { font-size: 0.8rem; color: #8a9ab8; margin-top: 0.3rem; line-height: 1.45; }
+  .wp-life { margin-top: 0.9rem; display: grid; grid-template-columns: auto 1fr; gap: 0.45rem 0.7rem; align-items: start; }
+  .wp-life .k { font-family: 'Space Mono', monospace; font-size: 0.55rem; letter-spacing: 0.1em; text-transform: uppercase; color: #5a6a80; padding-top: 0.15rem; }
+  .wp-life .v { font-size: 0.8rem; line-height: 1.4; }
+  .wp-life .v small { display: block; color: #8a9ab8; font-size: 0.7rem; }
+  .wp-life .v button { background: none; border: none; padding: 0; color: #e8c878; font: inherit; cursor: pointer; text-decoration: underline; text-decoration-color: rgba(232,200,120,0.35); text-underline-offset: 2px; }
+  .wp-loading { font-family: 'Space Mono', monospace; font-size: 0.6rem; color: #5a6a80; margin-top: 0.9rem; }
+  .wp-bar { position: relative; height: 4px; border-radius: 2px; background: rgba(255,255,255,0.07); margin: 0.9rem 0 0.2rem; }
+  .wp-bar .span { position: absolute; top: 0; bottom: 0; border-radius: 2px; background: linear-gradient(90deg, #e8c878, #c8a05c); }
+  .wp-bar .tick { position: absolute; top: -3px; width: 2px; height: 10px; background: #e8f0ff; border-radius: 1px; }
+  .wp-bar-l { display: flex; justify-content: space-between; font-family: 'Space Mono', monospace; font-size: 0.52rem; color: #5a6a80; }
+  .wp-sec { margin-top: 1rem; font-family: 'Space Mono', monospace; font-size: 0.55rem; letter-spacing: 0.12em; text-transform: uppercase; color: #5a6a80; }
+  .wp-events { margin-top: 0.45rem; display: flex; flex-direction: column; gap: 0.3rem; }
+  .wp-ev { display: grid; grid-template-columns: 10px 1fr auto; gap: 0.55rem; align-items: center; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 9px; padding: 0.45rem 0.6rem; cursor: pointer; text-align: left; color: #c8d4e8; font: inherit; font-size: 0.74rem; }
+  .wp-ev:hover { border-color: rgba(255,255,255,0.25); }
+  .wp-ev .d { width: 8px; height: 8px; border-radius: 50%; }
+  .wp-ev .y { font-family: 'Space Mono', monospace; font-size: 0.58rem; color: #5a6a80; }
+  .wp-ev.life { cursor: default; border-style: dashed; color: #e8c878; }
+  .wp-link { display: inline-block; margin-top: 1rem; font-family: 'Space Mono', monospace; font-size: 0.6rem; padding: 0.35rem 0.7rem; border: 1px solid rgba(232,200,120,0.35); color: #e8c878; border-radius: 6px; text-decoration: none; }
+  .wp-note { margin-top: 0.8rem; font-size: 0.62rem; color: #5a6a80; line-height: 1.4; }
+  @media (max-width: 700px) {
+    #whoPanel { top: auto; bottom: 0; left: 0; right: 0; width: auto; max-width: none; max-height: 72vh; border-radius: 18px 18px 0 0; }
+  }
+
+  /* Search — shared */
+  .ws-wrap { position: relative; flex: 1; min-width: 0; max-width: 420px; }
+  .ws-input { width: 100%; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.12); border-radius: 18px; color: #e8f0ff; font-family: 'Space Grotesk', system-ui, sans-serif; font-size: 16px; padding: 0.45rem 2rem 0.45rem 2rem; outline: none; }
+  .ws-input:focus { border-color: rgba(232,200,120,0.6); background: rgba(255,255,255,0.08); }
+  .ws-input::placeholder { color: #5a6a80; }
+  .ws-ico { position: absolute; left: 0.7rem; top: 50%; transform: translateY(-50%); color: #5a6a80; font-size: 0.85rem; pointer-events: none; }
+  .ws-clear { position: absolute; right: 0.35rem; top: 50%; transform: translateY(-50%); background: none; border: none; color: #8a9ab8; font-size: 0.9rem; cursor: pointer; padding: 0.3rem 0.45rem; display: none; }
+  .ws-list { position: absolute; top: calc(100% + 6px); left: 0; width: min(460px, calc(100vw - 1.5rem)); max-height: min(70vh, 560px); overflow-y: auto; background: rgba(15,22,36,0.98); border: 1px solid rgba(232,200,120,0.28); border-radius: 14px; box-shadow: 0 12px 48px rgba(0,0,0,0.6); z-index: 45; display: none; padding: 0.4rem; font-family: 'Space Grotesk', system-ui, sans-serif; }
+  .ws-list.on { display: block; }
+  .ws-h { font-family: 'Space Mono', monospace; font-size: 0.55rem; letter-spacing: 0.12em; text-transform: uppercase; color: #5a6a80; padding: 0.55rem 0.55rem 0.25rem; }
+  .ws-note { font-size: 0.72rem; color: #8a9ab8; padding: 0.5rem 0.6rem; line-height: 1.45; }
+  .ws-row { display: flex; align-items: center; gap: 0.55rem; width: 100%; background: none; border: none; color: #c8d4e8; text-align: left; padding: 0.45rem 0.55rem; border-radius: 9px; cursor: pointer; font-family: inherit; font-size: 0.8rem; }
+  .ws-row:hover, .ws-row.sel { background: rgba(232,200,120,0.1); }
+  .ws-row .d { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .ws-row .i { width: 1rem; text-align: center; flex-shrink: 0; font-size: 0.8rem; }
+  .ws-row .t { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .ws-row .s { display: block; font-size: 0.66rem; color: #8a9ab8; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .ws-row .y { font-family: 'Space Mono', monospace; font-size: 0.6rem; color: #5a6a80; flex-shrink: 0; }
+  @media (max-width: 599px) { .ws-wrap { order: 3; flex: 1 1 100%; max-width: none; } .ws-list { width: 100%; max-height: 62vh; } }
+  .ws-row.art .d { outline: 1.5px solid rgba(255,255,255,0.85); outline-offset: 1.5px; }
+</style>
+<div id="whoPanel" role="dialog" aria-label="Person or place"><button class="wp-close" aria-label="Close">&#10005;</button><div id="whoBody"></div></div>
+<script>
+// ── WEFT WHO: people & places ─────────────────────────────────────────────────
+// Birth and death details come live from Wikidata, so they are sourced, not typed in.
+window.WeftWho = (() => {
+  const M = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  let D = null, onJump = () => {}, onPerson = () => {}, onClose = () => {}, onGlobe = null;
+  const lifeCache = new Map();
+  const panel = () => document.getElementById('whoPanel');
+  const body = () => document.getElementById('whoBody');
+  const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+  function init(data, hooks = {}) {
+    D = data;
+    onJump = hooks.onJump || onJump; onPerson = hooks.onPerson || onPerson; onClose = hooks.onClose || onClose; onGlobe = hooks.onGlobe || null;
+    panel().querySelector('.wp-close').addEventListener('click', close);
+    document.addEventListener('keydown', e => { if (e.key === 'Escape' && panel().classList.contains('on')) { e.stopPropagation(); close(); } }, true);
+  }
+  function close() { panel().classList.remove('on'); onClose(); }
+
+  // ── Wikidata ──
+  async function getJSON(url) { const r = await fetch(url); if (!r.ok) throw new Error(r.status); return r.json(); }
+  function claim(ent, p) {
+    const c = ent && ent.claims && ent.claims[p]; if (!c || !c.length) return null;
+    const best = c.find(x => x.rank === 'preferred') || c.find(x => x.rank !== 'deprecated') || c[0];
+    return best.mainsnak && best.mainsnak.datavalue ? best.mainsnak.datavalue.value : null;
+  }
+  function parseTime(v) {
+    if (!v || !v.time) return null;
+    const m = v.time.match(/^([+-])(\d+)-(\d\d)-(\d\d)/); if (!m) return null;
+    const year = (m[1] === '-' ? -1 : 1) * parseInt(m[2], 10);
+    return { year, month: v.precision >= 10 && +m[3] ? +m[3] : null, day: v.precision >= 11 && +m[4] ? +m[4] : null };
+  }
+  async function lookup(title) {
+    const pp = await getJSON(`https://en.wikipedia.org/w/api.php?action=query&prop=pageprops&ppprop=wikibase_item&redirects=1&format=json&origin=*&titles=${encodeURIComponent(title.replace(/_/g, ' '))}`);
+    const pg = pp.query && pp.query.pages && Object.values(pp.query.pages)[0];
+    const qid = pg && pg.pageprops && pg.pageprops.wikibase_item; if (!qid) return null;
+    const ent = (await getJSON(`https://www.wikidata.org/w/api.php?action=wbgetentities&ids=${qid}&props=claims&format=json&origin=*`)).entities[qid];
+    const born = parseTime(claim(ent, 'P569')), died = parseTime(claim(ent, 'P570'));
+    const bp = claim(ent, 'P19'), dp = claim(ent, 'P20');
+    const ids = [...new Set([bp && bp.id, dp && dp.id].filter(Boolean))];
+    const pl = {};
+    if (ids.length) {
+      const pe = (await getJSON(`https://www.wikidata.org/w/api.php?action=wbgetentities&ids=${ids.join('|')}&props=labels|claims&languages=en&format=json&origin=*`)).entities;
+      const cids = new Set();
+      for (const [id, e] of Object.entries(pe)) {
+        const co = claim(e, 'P625'), ct = claim(e, 'P17');
+        pl[id] = { name: e.labels && e.labels.en ? e.labels.en.value : null, lat: co ? co.latitude : null, lon: co ? co.longitude : null, countryId: ct ? ct.id : null };
+        if (ct && ct.id !== id) cids.add(ct.id);
+      }
+      if (cids.size) {
+        const ce = (await getJSON(`https://www.wikidata.org/w/api.php?action=wbgetentities&ids=${[...cids].join('|')}&props=labels&languages=en&format=json&origin=*`)).entities;
+        Object.values(pl).forEach(p => { if (p.countryId && ce[p.countryId] && ce[p.countryId].labels.en) p.country = ce[p.countryId].labels.en.value; });
+      }
+    }
+    return { qid, born: born && { ...born, place: bp ? pl[bp.id] : null }, died: died && { ...died, place: dp ? pl[dp.id] : null } };
+  }
+  function life(title) {
+    if (!lifeCache.has(title)) lifeCache.set(title, lookup(title).catch(() => null));
+    return lifeCache.get(title);
+  }
+  function fmtDate(d) { if (!d) return ''; const y = d.year < 0 ? `${-d.year} BC` : d.year; return [d.day, d.month ? M[d.month - 1] : null, y].filter(Boolean).join(' '); }
+  function fmtPlace(p) { if (!p || !p.name) return ''; return p.country && p.country !== p.name ? `${p.name}, ${p.country}` : p.name; }
+  function ageAt(b, d) {
+    if (!b) return null;
+    const now = new Date(), e = d || { year: now.getFullYear(), month: now.getMonth() + 1, day: now.getDate() };
+    let a = e.year - b.year;
+    if (b.month && e.month && (e.month < b.month || (e.month === b.month && b.day && e.day && e.day < b.day))) a--;
+    return a;
+  }
+
+
+  // ── Dates at the precision we actually know ──
+  function fmtEvDate(e) {
+    const p = e.precision || 'day', y = e.year < 0 ? `${-e.year} BC` : e.year;
+    if (p === 'year') return String(y);
+    if (p === 'month') return `${M[e.month - 1]} ${y}`;
+    return `${e.day} ${M[e.month - 1]} ${y}`;
+  }
+
+  // ── Art as response: what a work answered, and what an event inspired ──
+  function inspiredBy(id) { return D.events.filter(e => (e.respondsTo || []).includes(id)).sort((a, b) => evKey(a) - evKey(b)); }
+  function responseIds(ev) { return new Set([...(ev.respondsTo || []), ...inspiredBy(ev.id).map(e => e.id)]); }
+  function renderResponses(container, ev) {
+    container.innerHTML = '';
+    const row = (label, list) => {
+      if (!list.length) return;
+      const l = document.createElement('div'); l.className = 'resp-label'; l.textContent = label; container.appendChild(l);
+      list.forEach(e => {
+        const d = D.domains[e.domain] || { color: '#888' };
+        const b = document.createElement('button'); b.className = 'resp-chip';
+        b.innerHTML = `<span class="d" style="background:${d.color}"></span><span>${esc(e.title)}</span><span class="y">${e.year}</span>`;
+        b.addEventListener('click', () => onJump(e.id));
+        container.appendChild(b);
+      });
+    };
+    row('Made in response to', (ev.respondsTo || []).map(evById).filter(Boolean));
+    row(ev.art ? 'Answered in turn by' : 'Art it inspired', inspiredBy(ev.id));
+  }
+
+  // ── World outline (Natural Earth, public domain) and small locator globes ──
+  let worldP = null;
+  function world() {
+    if (!worldP) worldP = fetch('weft-world.json', { cache: 'no-cache' }).then(r => r.ok ? r.json() : null).catch(() => null);
+    return worldP;
+  }
+  function drawLocator(cv, lat, lon) {
+    const dpr = Math.min(devicePixelRatio || 1, 2), css = cv.clientWidth || 84;
+    cv.width = css * dpr; cv.height = css * dpr;
+    const g = cv.getContext('2d'); g.scale(dpr, dpr);
+    const R = css / 2 - 2, cx = css / 2, cy = css / 2, rad = Math.PI / 180;
+    const p0 = Math.max(-60, Math.min(60, lat)) * rad, l0 = lon * rad;
+    const sp0 = Math.sin(p0), cp0 = Math.cos(p0);
+    const proj = (lo, la) => {
+      const p = la * rad, l = lo * rad, cp = Math.cos(p), sp = Math.sin(p), cl = Math.cos(l - l0);
+      return [cx + R * cp * Math.sin(l - l0), cy - R * (cp0 * sp - sp0 * cp * cl), sp0 * sp + cp0 * cp * cl > 0];
+    };
+    const grd = g.createRadialGradient(cx - R * 0.3, cy - R * 0.3, R * 0.1, cx, cy, R);
+    grd.addColorStop(0, '#13233d'); grd.addColorStop(1, '#070d18');
+    g.fillStyle = grd; g.beginPath(); g.arc(cx, cy, R, 0, Math.PI * 2); g.fill();
+    g.strokeStyle = 'rgba(92,160,224,0.45)'; g.lineWidth = 1; g.stroke();
+    const lines = (arr, style, w) => {
+      g.strokeStyle = style; g.lineWidth = w; g.beginPath();
+      arr.forEach(a => { let pen = false; for (let i = 0; i < a.length; i += 2) { const [x, y, v] = proj(a[i] / 10, a[i + 1] / 10); if (v) { pen ? g.lineTo(x, y) : g.moveTo(x, y); pen = true; } else pen = false; } });
+      g.stroke();
+    };
+    world().then(w => {
+      if (w) { lines(w.borders, 'rgba(92,160,224,0.22)', 0.6); lines(w.coast, 'rgba(120,180,240,0.85)', 0.9); }
+      const [x, y, v] = proj(lon, lat);
+      if (!v) return;
+      const glow = g.createRadialGradient(x, y, 0, x, y, 10);
+      glow.addColorStop(0, 'rgba(232,200,120,0.9)'); glow.addColorStop(1, 'rgba(232,200,120,0)');
+      g.fillStyle = glow; g.beginPath(); g.arc(x, y, 10, 0, Math.PI * 2); g.fill();
+      g.fillStyle = '#fff3d0'; g.beginPath(); g.arc(x, y, 2.4, 0, Math.PI * 2); g.fill();
+    });
+  }
+  function locator(lat, lon, cls, title) {
+    const cv = document.createElement('canvas'); cv.className = cls; cv.title = title || '';
+    requestAnimationFrame(() => drawLocator(cv, lat, lon));
+    return cv;
+  }
+
+  // ── Event pictures from Wikipedia ──
+  // Uses Wikipedia's own "page image" for the article, at a standard size; falls back to the summary thumbnail as given.
+  const imgCache = new Map();
+  function image(ev) {
+    if (ev.image) return Promise.resolve({ src: ev.image, credit: ev.imageCredit });
+    const m = (ev.wiki || '').match(/\/wiki\/([^#?]+)/); if (!m) return Promise.resolve(null);
+    let title; try { title = decodeURIComponent(m[1]).replace(/_/g, ' '); } catch (e) { title = m[1].replace(/_/g, ' '); }
+    if (imgCache.has(title)) return imgCache.get(title);
+    const p = (async () => {
+      // pageimages only offers freely licensed pictures by default, so no fair-use covers or posters.
+      try {
+        const j = await getJSON(`https://en.wikipedia.org/w/api.php?action=query&prop=pageimages&piprop=thumbnail|name&pilicense=free&pithumbsize=960&redirects=1&format=json&origin=*&titles=${encodeURIComponent(title)}`);
+        const pg = j.query && j.query.pages && Object.values(j.query.pages)[0];
+        if (pg && pg.thumbnail && pg.thumbnail.source) return {
+          src: pg.thumbnail.source, credit: 'Image: Wikimedia Commons · author & licence',
+          href: pg.pageimage ? 'https://commons.wikimedia.org/wiki/File:' + encodeURIComponent(pg.pageimage) : null };
+      } catch (e) { /* offline or blocked */ }
+      return null;
+    })();
+    imgCache.set(title, p);
+    return p;
+  }
+
+  // ── Lookups in Weft's own data ──
+  const evById = id => D.events.find(e => e.id === id);
+  const evKey = e => e.year * 10000 + e.month * 100 + e.day;
+  function eventsWithPerson(t) { return D.events.filter(e => (e.people || []).includes(t)).sort((a, b) => evKey(a) - evKey(b)); }
+  function eventsAtPlace(k) { return D.events.filter(e => e.place === k).sort((a, b) => evKey(a) - evKey(b)); }
+  function placeKeyByName(name) {
+    if (!name) return null;
+    const n = name.toLowerCase();
+    return Object.keys(D.places).find(k => { const pn = D.places[k].name.toLowerCase(); return pn === n || pn.split(/[ ,(]/)[0] === n; }) || null;
+  }
+
+  // ── Chips on an event card ──
+  function renderChips(container, ev) {
+    container.innerHTML = '';
+    const ppl = ev.people || [], pk = ev.place, pl = pk && D.places[pk];
+    if (!ppl.length && !pl) return;
+    const lab = document.createElement('div'); lab.className = 'who-label'; lab.textContent = 'Who & where'; container.appendChild(lab);
+    if (pl && pl.lat != null) {
+      const cv = locator(pl.lat, pl.lon, 'who-globe', onGlobe ? 'Show on the globe' : 'See this place');
+      cv.addEventListener('click', () => onGlobe ? onGlobe(ev) : openPlace(pk));
+      container.appendChild(cv);
+    }
+    ppl.forEach(t => {
+      const p = D.people[t]; if (!p) return;
+      const b = document.createElement('button'); b.className = 'who-chip';
+      b.innerHTML = `<span class="wi">&#128100;</span><span>${esc(p.name)}</span>`;
+      b.addEventListener('click', () => openPerson(t));
+      container.appendChild(b);
+    });
+    if (pl) {
+      const b = document.createElement('button'); b.className = 'who-chip place';
+      b.innerHTML = `<span class="wi">&#128205;</span><span>${esc(pl.name)}</span>`;
+      b.addEventListener('click', () => openPlace(pk));
+      container.appendChild(b);
+    }
+  }
+
+  function eventRow(e) {
+    const d = D.domains[e.domain] || { color: '#888' };
+    const b = document.createElement('button'); b.className = 'wp-ev';
+    b.innerHTML = `<span class="d" style="background:${d.color}"></span><span>${esc(e.title)}</span><span class="y">${e.year}</span>`;
+    b.addEventListener('click', () => onJump(e.id));
+    return b;
+  }
+
+  // ── Person panel ──
+  function openPerson(t) {
+    const p = D.people[t]; if (!p) return;
+    const evs = eventsWithPerson(t);
+    body().innerHTML = `
+      <div class="wp-kind">Person</div>
+      <div class="wp-name">${esc(p.name)}</div>
+      <div class="wp-desc">${esc(p.desc)}</div>
+      <div class="wp-loading" id="wpLife">Looking up birth and death on Wikidata&hellip;</div>
+      <div class="wp-sec">In Weft &middot; ${evs.length} event${evs.length === 1 ? '' : 's'}</div>
+      <div class="wp-events" id="wpEvents"></div>
+      <a class="wp-link" href="${esc(p.wiki)}" target="_blank" rel="noopener">&rarr; Wikipedia</a>`;
+    const list = body().querySelector('#wpEvents');
+    evs.forEach(e => list.appendChild(eventRow(e)));
+    panel().classList.add('on'); panel().scrollTop = 0;
+    onPerson(t, null, evs);
+    life(t).then(L => {
+      const slot = body().querySelector('#wpLife');
+      if (!slot || body().querySelector('.wp-name').textContent !== p.name) return;
+      if (!L || (!L.born && !L.died)) { slot.textContent = 'Birth and death details unavailable right now.'; onPerson(t, null, evs); return; }
+      const row = (k, d, extra) => {
+        const pkey = d.place && placeKeyByName(d.place.name);
+        const placeHtml = d.place && d.place.name ? (pkey ? `<button data-pk="${pkey}">${esc(fmtPlace(d.place))}</button>` : esc(fmtPlace(d.place))) : '<span style="color:#5a6a80">place not recorded</span>';
+        return `<div class="k">${k}</div><div class="v">${esc(fmtDate(d))}${extra ? ` <small>${extra}</small>` : ''}<small>${placeHtml}</small></div>`;
+      };
+      const a = ageAt(L.born, L.died);
+      let html = '<div class="wp-life">';
+      if (L.born) html += row('Born', L.born, '');
+      if (L.died) html += row('Died', L.died, a != null ? `aged ${a}` : '');
+      else if (L.born && a != null && a < 125) html += `<div class="k">Now</div><div class="v">${a} years old</div>`;
+      html += '</div>';
+      // life bar with Weft events as ticks
+      if (L.born) {
+        const y0 = L.born.year, y1 = L.died ? L.died.year : new Date().getFullYear();
+        const span = Math.max(1, y1 - y0);
+        const ticks = evs.filter(e => e.year >= y0 && e.year <= y1).map(e => `<span class="tick" title="${esc(e.title)}" style="left:${((e.year - y0) / span * 100).toFixed(1)}%"></span>`).join('');
+        html += `<div class="wp-bar"><span class="span" style="left:0;right:0"></span>${ticks}</div><div class="wp-bar-l"><span>${y0 < 0 ? -y0 + ' BC' : y0}</span><span>${L.died ? y1 : 'today'}</span></div>`;
+      }
+      slot.outerHTML = html + '<div class="wp-note">Birth and death details from Wikidata.</div>';
+      body().querySelectorAll('[data-pk]').forEach(b => b.addEventListener('click', () => openPlace(b.dataset.pk)));
+      onPerson(t, L, evs);
+    });
+  }
+
+  // ── Place panel ──
+  function openPlace(k) {
+    const pl = D.places[k]; if (!pl) return;
+    const evs = eventsAtPlace(k);
+    const coords = pl.lat != null ? `${Math.abs(pl.lat).toFixed(2)}&deg;${pl.lat >= 0 ? 'N' : 'S'}, ${Math.abs(pl.lon).toFixed(2)}&deg;${pl.lon >= 0 ? 'E' : 'W'}` : '';
+    // People in Weft who were born or died here (from what we've already looked up)
+    body().innerHTML = `
+      <div class="wp-kind">Place</div>
+      <div class="wp-name">${esc(pl.name)}</div>
+      <div class="wp-desc">${esc(pl.country !== '—' ? pl.country : '')}${coords ? ` &middot; ${coords}` : ''}</div>
+      <div class="wp-sec">Happened here &middot; ${evs.length} event${evs.length === 1 ? '' : 's'}</div>
+      <div class="wp-events" id="wpEvents"></div>
+      <div class="wp-sec" id="wpLivesH" style="display:none">Lives that began or ended here</div>
+      <div class="wp-events" id="wpLives"></div>`;
+    const list = body().querySelector('#wpEvents');
+    evs.forEach(e => list.appendChild(eventRow(e)));
+    if (pl.lat != null) body().insertBefore(locator(pl.lat, pl.lon, 'wp-globe', pl.name), body().firstChild);
+    panel().classList.add('on'); panel().scrollTop = 0;
+    onClose();
+    // Check the people already looked up this session for births/deaths here
+    const lives = body().querySelector('#wpLives');
+    lifeCache.forEach((prom, t) => prom.then(L => {
+      if (!L || !body().querySelector('#wpLives')) return;
+      [['born', L.born], ['died', L.died]].forEach(([kind, d]) => {
+        if (d && d.place && placeKeyByName(d.place.name) === k) {
+          body().querySelector('#wpLivesH').style.display = '';
+          const b = document.createElement('button'); b.className = 'wp-ev';
+          b.innerHTML = `<span class="d" style="background:#e8c878"></span><span>${esc(D.people[t].name)} ${kind} here</span><span class="y">${d.year}</span>`;
+          b.addEventListener('click', () => openPerson(t));
+          lives.appendChild(b);
+        }
+      });
+    }));
+  }
+
+
+  // ── Search: words for people, places and events; dates as a year, month, day or range ──
+    const fold = t => String(t || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
+    .replace(/[łŁ]/g, 'l').replace(/[øØ]/g, 'o').replace(/[đĐ]/g, 'd').replace(/ß/g, 'ss').replace(/æ/g, 'ae').replace(/œ/g, 'oe')
+    .replace(/[’'`]/g, '').replace(/[^a-z0-9\s-]/g, ' ');
+  const MFULL = 'january february march april may june july august september october november december'.split(' ');
+  const monthOf = w => { if (w.length < 3) return 0; if (w === 'sept') return 9; const i = MFULL.findIndex(m => m.startsWith(w)); return i + 1; };
+  let idx = null;
+  function buildIndex() {
+    const dom = k => (D.domains[k] || {}).label || '';
+    idx = {
+      ev: D.events.map(e => {
+        const pl = D.places[e.place];
+        const ppl = (e.people || []).map(t => D.people[t] ? D.people[t].name : t.replace(/_/g, ' '));
+        return { e, title: fold(e.title), hay: fold([e.title, e.body, pl && pl.name, pl && pl.country, ...ppl, dom(e.domain), e.art ? 'art response' : ''].join(' ')) };
+      }),
+      pp: Object.entries(D.people).map(([k, p]) => ({ k, p, name: fold(p.name), hay: fold(p.name + ' ' + (p.desc || '')) })),
+      pl: Object.entries(D.places).map(([k, p]) => ({ k, p, name: fold(p.name), hay: fold(p.name + ' ' + p.country) })),
+    };
+  }
+  function parseQuery(q) {
+    let t = ' ' + fold(q).replace(/(\d)\s*-\s*(\d)/g, '$1 to $2') + ' ';
+    let date = null;
+    const take = (re, fn) => { if (date) return; const g = new RegExp(re.source, 'g'); let m; while ((m = g.exec(t))) { const r = fn(m); if (r) { date = r; t = t.slice(0, m.index) + ' ' + t.slice(m.index + m[0].length); return; } g.lastIndex = m.index + 1; } };
+    take(/\b(\d{4})\s+(?:to|until)\s+(\d{4})\b/, m => ({ from: [+m[1], 1, 1], to: [+m[2], 12, 31], kind: 'range' }));
+    take(/\b(\d{4}) to (\d{1,2}) to (\d{1,2})\b/, m => ({ y: +m[1], m: +m[2], d: +m[3], kind: 'day' }));
+    take(/\b(\d{1,2})(?:st|nd|rd|th)?\s+([a-z]{3,9})\s+(\d{4})\b/, m => monthOf(m[2]) ? { y: +m[3], m: monthOf(m[2]), d: +m[1], kind: 'day' } : null);
+    take(/\b([a-z]{3,9})\s+(\d{1,2})(?:st|nd|rd|th)?\s+(\d{4})\b/, m => monthOf(m[1]) ? { y: +m[3], m: monthOf(m[1]), d: +m[2], kind: 'day' } : null);
+    take(/\b([a-z]{3,9})\s+(\d{4})\b/, m => monthOf(m[1]) ? { y: +m[2], m: monthOf(m[1]), kind: 'month' } : null);
+    take(/\b(\d{4})s\b/, m => ({ from: [+m[1], 1, 1], to: [+m[1] + 9, 12, 31], kind: 'range' }));
+    take(/\b(1\d{3}|20\d{2})\b/, m => ({ y: +m[1], kind: 'year' }));
+    const words = t.split(/\s+/).filter(w => w && w !== 'to');
+    return { date, words };
+  }
+  function dateHit(e, d) {
+    if (!d) return true;
+    const p = e.precision || 'day';
+    if (d.kind === 'year') return e.year === d.y;
+    if (d.kind === 'month') return e.year === d.y && p !== 'year' && e.month === d.m;
+    if (d.kind === 'day') return e.year === d.y && p === 'day' && e.month === d.m && e.day === d.d;
+    const k = e.year * 10000 + e.month * 100 + e.day;
+    return k >= d.from[0] * 10000 + d.from[1] * 100 + d.from[2] && k <= d.to[0] * 10000 + d.to[1] * 100 + d.to[2];
+  }
+  function search(q) {
+    if (!idx) buildIndex();
+    const { date, words } = parseQuery(q);
+    const has = (hay, w) => (' ' + hay).includes(' ' + w);   // match from the start of a word
+    const all = h => words.every(w => has(h, w));
+    let people = [], places = [];
+    if (words.length && !date) {
+      people = idx.pp.filter(x => all(x.hay)).sort((a, b) => (all(b.name) - all(a.name)) || a.p.name.localeCompare(b.p.name)).map(x => x.k);
+      places = idx.pl.filter(x => all(x.hay)).sort((a, b) => (all(b.name) - all(a.name)) || a.p.name.localeCompare(b.p.name)).map(x => x.k);
+    }
+    const events = idx.ev.filter(x => dateHit(x.e, date) && (!words.length || all(x.hay)))
+      .sort((a, b) => words.length && !date ? (all(b.title) - all(a.title)) || (evKey(a.e) - evKey(b.e)) : evKey(a.e) - evKey(b.e))
+      .map(x => x.e);
+    return { date, words, people, places, events };
+  }
+  function mountSearch(input, list, hooks = {}) {
+    const clear = input.parentElement.querySelector('.ws-clear');
+    const goEv = hooks.onEvent || (id => onJump(id));
+    let rows = [], sel = -1, timer = 0;
+    const hide = () => { list.classList.remove('on'); sel = -1; };
+    const go = i => { const r = rows[i]; if (!r) return; hide(); input.blur(); r.go(); };
+    function render() {
+      const q = input.value.trim();
+      if (clear) clear.style.display = q ? 'block' : 'none';
+      if (q.length < 2) { hide(); return; }
+      const r = search(q);
+      list.innerHTML = ''; rows = []; sel = -1;
+      const head = t => { const h = document.createElement('div'); h.className = 'ws-h'; h.textContent = t; list.appendChild(h); };
+      const add = (html, fn, cls = '') => { const b = document.createElement('button'); b.className = 'ws-row ' + cls; b.innerHTML = html; const i = rows.length; b.addEventListener('click', () => go(i)); b.addEventListener('mousemove', () => mark(i)); rows.push({ el: b, go: fn }); list.appendChild(b); };
+      if (r.people.length) { head('People'); r.people.slice(0, 6).forEach(k => { const p = D.people[k]; add(`<span class="i">👤</span><span class="t">${esc(p.name)}<span class="s">${esc(p.desc || '')}</span></span>`, () => openPerson(k)); }); }
+      if (r.places.length) { head('Places'); r.places.slice(0, 5).forEach(k => { const p = D.places[k]; add(`<span class="i">📍</span><span class="t">${esc(p.name)}<span class="s">${esc(p.country)}</span></span>`, () => openPlace(k)); }); }
+      const MAX = 60;
+      if (r.events.length) {
+        head(`Events · ${r.events.length}${r.events.length > MAX ? ' (first ' + MAX + ')' : ''}`);
+        r.events.slice(0, MAX).forEach(e => { const c = (D.domains[e.domain] || {}).color || '#888';
+          add(`<span class="d" style="background:${c}"></span><span class="t">${esc(e.title)}</span><span class="y">${esc(fmtEvDate(e))}</span>`, () => goEv(e.id), e.art ? 'art' : ''); });
+      }
+      if (!rows.length) {
+        const n = document.createElement('div'); n.className = 'ws-note';
+        n.textContent = r.date ? 'Nothing in Weft for that date yet.' : 'Nothing in Weft matches that yet. Weft only covers 1492, 1776, 1914 and 1970–1999 for now.';
+        list.appendChild(n);
+      }
+      list.classList.add('on'); list.scrollTop = 0;
+    }
+    function mark(i) { rows.forEach((r, j) => r.el.classList.toggle('sel', j === i)); sel = i; if (rows[i]) rows[i].el.scrollIntoView({ block: 'nearest' }); }
+    input.addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(render, 120); });
+    input.addEventListener('focus', () => { if (input.value.trim().length >= 2) render(); });
+    input.addEventListener('keydown', e => {
+      if (e.key === 'ArrowDown') { e.preventDefault(); mark(Math.min(rows.length - 1, sel + 1)); }
+      else if (e.key === 'ArrowUp') { e.preventDefault(); mark(Math.max(0, sel - 1)); }
+      else if (e.key === 'Enter') { e.preventDefault(); go(sel >= 0 ? sel : 0); }
+      else if (e.key === 'Escape') { e.stopPropagation(); hide(); input.blur(); }
+    });
+    if (clear) clear.addEventListener('click', () => { input.value = ''; hide(); clear.style.display = 'none'; input.focus(); });
+    document.addEventListener('pointerdown', e => { if (!list.contains(e.target) && e.target !== input) hide(); });
+    document.addEventListener('keydown', e => { if (e.key === '/' && document.activeElement.tagName !== 'INPUT') { e.preventDefault(); input.focus(); } });
+  }
+
+  // ── Data: a manifest lists one file per century; load them all and merge into one set ──
+  async function loadAll(base = '') {
+    const get = async u => { const r = await fetch(base + u, { cache: 'no-cache' }); if (!r.ok) throw new Error(u + ' ' + r.status); return r.json(); };
+    const m = await get('data/manifest.json');
+    const parts = await Promise.all(m.files.map(f => get(f.file).catch(() => null)));
+    const out = { domains: m.domains, files: m.files, events: [], people: {}, places: {} };
+    parts.forEach(p => { if (!p) return; out.events.push(...p.events); Object.assign(out.people, p.people); Object.assign(out.places, p.places); });
+    out.events.sort((a, b) => (a.year - b.year) || (a.month - b.month) || (a.day - b.day) || (a.id - b.id));
+    return out;
+  }
+
+  return { loadAll, search, mountSearch, init, renderChips, openPerson, openPlace, close, life, fmtDate, fmtPlace, image, world, fmtEvDate, renderResponses, responseIds };
+})();
+</script>
+<!--/WEFT-WHO-->
+
+<script>
+// DATA — loaded century by century, as listed in data/manifest.json
+let DOMAINS = {};
+let ALL_EVENTS = [];
+let AVAILABLE_YEARS = [];
+let THREAD_MAP = new Map();
+
+const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+// State
+const activeFilters = new Set();
+let currentYear = 1985, zoomedMonth = null, currentEventId = null, viewMode = 'single';
+
+// ── LOAD DATA ──────────────────────────────────────────────────────────────────
+async function loadData() {
+  let data = null;
+  try { data = await WeftWho.loadAll(); } catch (e) { /* shown below */ }
+
+  if (!data) {
+    document.getElementById('loadError').textContent = 'Could not load the timeline data. Please try again in a moment.';
+    document.getElementById('loadError').style.display = 'block';
+    document.querySelector('#loadScreen .load-sub').textContent = 'Failed to load data.';
+    return;
+  }
+
+  DOMAINS = data.domains;
+  ALL_EVENTS = data.events;
+  WeftWho.init(data, { onJump: id => { if (innerWidth < 700) WeftWho.close(); jumpToEvent(id); } });
+  WeftWho.mountSearch(document.getElementById('wsInput'), document.getElementById('wsList'));
+
+  // Build bidirectional thread map
+  THREAD_MAP = new Map();
+  ALL_EVENTS.forEach(e => {
+    (e.threads || []).forEach(t => {
+      if (!THREAD_MAP.has(e.id)) THREAD_MAP.set(e.id, new Set());
+      THREAD_MAP.get(e.id).add(t);
+      if (!THREAD_MAP.has(t)) THREAD_MAP.set(t, new Set());
+      THREAD_MAP.get(t).add(e.id);
+    });
+  });
+  AVAILABLE_YEARS = [...new Set(ALL_EVENTS.map(e => e.year))].sort((a, b) => a - b);
+  Object.keys(DOMAINS).forEach(k => activeFilters.add(k));
+
+  // Start at the most recent year with data, or at a year asked for in the link (?year=1976)
+  const askYear = parseInt(new URLSearchParams(location.search).get('year'), 10);
+  currentYear = AVAILABLE_YEARS.includes(askYear) ? askYear : AVAILABLE_YEARS[AVAILABLE_YEARS.length - 1];
+
+  // Hide load screen, show app
+  document.getElementById('loadScreen').classList.add('hidden');
+  document.getElementById('app').style.display = 'flex';
+  document.getElementById('app').style.flexDirection = 'column';
+
+  init();
+  document.getElementById('yearLabel').textContent = currentYear;
+  document.getElementById('footerYear').textContent = currentYear;
+  document.getElementById('to3d').href = 'index.html?year=' + currentYear;
+
+  // Desktop defaults: lanes view, mouse-friendly hint
+  if (IS_WIDE) setView('lanes');
+  if (HAS_HOVER) document.querySelector('.header-right p').innerHTML = 'Click any event &middot; Hover for titles';
+  prefetchYearImages();
+}
+
+// ── INIT ───────────────────────────────────────────────────────────────────────
+function init() {
+  // Slider
+  const slider = document.getElementById('yearSlider');
+  slider.min = 0;
+  slider.max = AVAILABLE_YEARS.length - 1;
+  slider.value = AVAILABLE_YEARS.indexOf(currentYear);
+  document.getElementById('sliderMin').textContent = AVAILABLE_YEARS[0];
+  document.getElementById('sliderMax').textContent = AVAILABLE_YEARS[AVAILABLE_YEARS.length - 1];
+
+  // Year select
+  const jumpYear = document.getElementById('jumpYear');
+  AVAILABLE_YEARS.forEach(y => {
+    const o = document.createElement('option');
+    o.value = y; o.textContent = y;
+    jumpYear.appendChild(o);
+  });
+  jumpYear.value = currentYear;
+
+  slider.addEventListener('input', () => {
+    goToYear(AVAILABLE_YEARS[parseInt(slider.value)]);
+  });
+  jumpYear.addEventListener('change', () => {
+    if (jumpYear.value) goToYear(parseInt(jumpYear.value));
+  });
+
+  document.getElementById('btnPrevYear').addEventListener('click', () => {
+    const i = AVAILABLE_YEARS.indexOf(currentYear);
+    if (i > 0) goToYear(AVAILABLE_YEARS[i - 1]);
+  });
+  document.getElementById('btnNextYear').addEventListener('click', () => {
+    const i = AVAILABLE_YEARS.indexOf(currentYear);
+    if (i < AVAILABLE_YEARS.length - 1) goToYear(AVAILABLE_YEARS[i + 1]);
+  });
+
+  // View toggle
+  document.getElementById('btnSingleView').addEventListener('click', () => setView('single'));
+  document.getElementById('btnLaneView').addEventListener('click', () => setView('lanes'));
+
+  // Filter buttons
+  document.getElementById('btnAllOn').addEventListener('click', () => {
+    Object.keys(DOMAINS).forEach(k => activeFilters.add(k));
+    document.querySelectorAll('.filter-pill').forEach(p => { p.classList.add('active'); p.classList.remove('inactive'); });
+    if (viewMode === 'single') updateNodeVisibility(); else buildLaneView();
+    updateEmptyState();
+  });
+  document.getElementById('btnAllOff').addEventListener('click', () => {
+    activeFilters.clear();
+    document.querySelectorAll('.filter-pill').forEach(p => { p.classList.remove('active'); p.classList.add('inactive'); });
+    if (viewMode === 'single') updateNodeVisibility(); else buildLaneView();
+    updateEmptyState();
+  });
+
+  // Modal close
+  document.getElementById('modalClose').addEventListener('click', closeModal);
+  document.getElementById('modalBackdrop').addEventListener('click', e => { if (e.target === document.getElementById('modalBackdrop')) closeModal(); });
+  document.addEventListener('keydown', e => {
+    const modalOpen = document.getElementById('modalBackdrop').classList.contains('visible');
+    if (modalOpen) {
+      if (e.key === 'Escape') closeModal();
+      if (e.key === 'ArrowLeft' && !document.getElementById('navPrev').disabled) document.getElementById('navPrev').click();
+      if (e.key === 'ArrowRight' && !document.getElementById('navNext').disabled) document.getElementById('navNext').click();
+      return;
+    }
+    const tag = document.activeElement && document.activeElement.tagName;
+    if (tag === 'INPUT' || tag === 'SELECT') return;
+    if (e.key === 'ArrowLeft' && !document.getElementById('btnPrevYear').disabled) document.getElementById('btnPrevYear').click();
+    if (e.key === 'ArrowRight' && !document.getElementById('btnNextYear').disabled) document.getElementById('btnNextYear').click();
+  });
+
+  // Modal nav
+  document.getElementById('navPrev').addEventListener('click', () => {
+    const v = visibleEvents(), i = v.findIndex(e => e.id === currentEventId);
+    if (i > 0) { currentEventId = v[i - 1].id; renderModal(); document.getElementById('modalEl').scrollTop = 0; }
+  });
+  document.getElementById('navNext').addEventListener('click', () => {
+    const v = visibleEvents(), i = v.findIndex(e => e.id === currentEventId);
+    if (i < v.length - 1) { currentEventId = v[i + 1].id; renderModal(); document.getElementById('modalEl').scrollTop = 0; }
+  });
+
+  // Swipe gestures
+  const modalEl = document.getElementById('modalEl');
+  let touchStartY = 0, touchStartX = 0;
+  modalEl.addEventListener('touchstart', e => { touchStartY = e.touches[0].clientY; touchStartX = e.touches[0].clientX; }, { passive: true });
+  modalEl.addEventListener('touchend', e => {
+    const dy = e.changedTouches[0].clientY - touchStartY;
+    const dx = Math.abs(e.changedTouches[0].clientX - touchStartX);
+    if (dy > 60 && dx < 60) closeModal();
+    if (dx > 60 && Math.abs(dy) < 60) {
+      const v = visibleEvents(), i = v.findIndex(ev => ev.id === currentEventId);
+      if (e.changedTouches[0].clientX < touchStartX && i < v.length - 1) { currentEventId = v[i + 1].id; renderModal(); }
+      else if (e.changedTouches[0].clientX > touchStartX && i > 0) { currentEventId = v[i - 1].id; renderModal(); }
+    }
+  }, { passive: true });
+
+  updateYearNavBtns();
+  buildMonthRow();
+  buildFilterPanel();
+  renderNodes();
+  updateEmptyState();
+
+  document.getElementById('footerInfo').textContent =
+    `${AVAILABLE_YEARS.length} years · ${ALL_EVENTS.length} events`;
+}
+
+// ── HELPERS ────────────────────────────────────────────────────────────────────
+function eventsForYear(y) {
+  return ALL_EVENTS.filter(e => e.year === y).sort((a, b) => (a.month * 100 + a.day) - (b.month * 100 + b.day));
+}
+function visibleEvents() {
+  let e = eventsForYear(currentYear).filter(e => activeFilters.has(e.domain));
+  if (zoomedMonth !== null) e = e.filter(e => e.month === zoomedMonth + 1);
+  return e;
+}
+function dateToPercent(month, day) {
+  return (((month - 1) * 30.44 + day - 1) / 365) * 100;
+}
+const HAS_HOVER = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+const IS_WIDE = window.matchMedia('(min-width: 900px)').matches;
+
+// ── WIKIPEDIA IMAGES ───────────────────────────────────────────────────────────
+const wikiImageCache = new Map();
+function wikiTitleFromUrl(url) {
+  const m = (url || '').match(/\/wiki\/([^#?]+)/);
+  return m ? m[1] : null;
+}
+function getWikiImage(ev) { return WeftWho.image(ev); }
+function prefetchYearImages() {
+  const yearAtStart = currentYear;
+  const evs = eventsForYear(currentYear);
+  let i = 0;
+  (function next() {
+    if (i >= evs.length || currentYear !== yearAtStart) return;
+    getWikiImage(evs[i++]).finally(() => setTimeout(next, 150));
+  })();
+}
+
+// ── TOOLTIP (desktop hover) ────────────────────────────────────────────────────
+function attachTooltip(node, ev) {
+  if (!HAS_HOVER) return;
+  node.addEventListener('mouseenter', () => {
+    const t = document.getElementById('tooltip');
+    t.querySelector('.tip-title').textContent = ev.title;
+    t.querySelector('.tip-date').textContent = `${WeftWho.fmtEvDate(ev)} · ${DOMAINS[ev.domain].label}${ev.art ? ' · art' : ''}`;
+    t.classList.add('visible');
+    const r = node.getBoundingClientRect();
+    const tw = t.offsetWidth, th = t.offsetHeight;
+    let x = r.left + r.width / 2 - tw / 2;
+    x = Math.max(8, Math.min(x, window.innerWidth - tw - 8));
+    let y = r.top - th - 12;
+    if (y < 8) y = r.bottom + 12;
+    t.style.left = x + 'px'; t.style.top = y + 'px';
+  });
+  node.addEventListener('mouseleave', () => document.getElementById('tooltip').classList.remove('visible'));
+}
+
+// ── YEAR NAV ───────────────────────────────────────────────────────────────────
+function goToYear(y) {
+  currentYear = y;
+  zoomedMonth = null;
+  const idx = AVAILABLE_YEARS.indexOf(y);
+  document.getElementById('yearSlider').value = idx;
+  document.getElementById('jumpYear').value = y;
+  document.getElementById('yearLabel').textContent = y;
+  document.getElementById('footerYear').textContent = y;
+  document.getElementById('to3d').href = 'index.html?year=' + y;
+  updateYearNavBtns();
+  buildMonthRow();
+  buildFilterPanel();
+  if (viewMode === 'single') { renderNodes(); updateZoomBand(); } else buildLaneView();
+  updateEmptyState();
+  if (currentEventId) closeModal();
+  prefetchYearImages();
+}
+function updateYearNavBtns() {
+  const i = AVAILABLE_YEARS.indexOf(currentYear);
+  document.getElementById('btnPrevYear').disabled = i <= 0;
+  document.getElementById('btnNextYear').disabled = i >= AVAILABLE_YEARS.length - 1;
+}
+
+// ── VIEW ───────────────────────────────────────────────────────────────────────
+function setView(mode) {
+  viewMode = mode;
+  document.getElementById('btnSingleView').classList.toggle('active', mode === 'single');
+  document.getElementById('btnLaneView').classList.toggle('active', mode === 'lanes');
+  document.getElementById('singleView').classList.toggle('hidden', mode === 'lanes');
+  document.getElementById('laneView').classList.toggle('visible', mode === 'lanes');
+  if (mode === 'single') { renderNodes(); updateZoomBand(); } else buildLaneView();
+  updateEmptyState();
+}
+
+// ── MONTH ROW ──────────────────────────────────────────────────────────────────
+function buildMonthRow() {
+  const mr = document.getElementById('monthRow'), tk = document.getElementById('ticks');
+  mr.innerHTML = ''; tk.innerHTML = '';
+  MONTHS.forEach((m, i) => {
+    const el = document.createElement('div');
+    el.className = 'month-label' + (zoomedMonth === i ? ' zoomed' : '');
+    el.textContent = m;
+    el.addEventListener('click', () => {
+      zoomedMonth = (zoomedMonth === i) ? null : i;
+      buildMonthRow(); repositionNodes(); updateZoomBand(); updateEmptyState();
+      if (viewMode === 'lanes') buildLaneView();
+    });
+    mr.appendChild(el);
+    const t = document.createElement('div'); t.className = 'tick'; tk.appendChild(t);
+  });
+}
+function updateZoomBand() {
+  const band = document.getElementById('zoomBand');
+  if (zoomedMonth === null) { band.classList.remove('visible'); return; }
+  band.style.left = `${(zoomedMonth / 12) * 100}%`;
+  band.style.width = `${(1 / 12) * 100}%`;
+  band.classList.add('visible');
+}
+
+// ── NODES ──────────────────────────────────────────────────────────────────────
+const nodesLayer = document.getElementById('nodesLayer');
+function renderNodes() {
+  nodesLayer.querySelectorAll('.node').forEach(n => n.remove());
+  eventsForYear(currentYear).forEach((ev, i) => {
+    const node = document.createElement('div');
+    node.className = `node ${ev.position}`;
+    node.dataset.domain = ev.domain;
+    node.dataset.id = ev.id;
+    if (ev.art) node.classList.add('art');
+    node.style.left = `${dateToPercent(ev.month, ev.day)}%`;
+    node.style.background = DOMAINS[ev.domain].color;
+    node.style.boxShadow = `0 0 8px ${DOMAINS[ev.domain].color}99`;
+    node.style.setProperty('--delay', `${(i * 0.19) % 2.5}s`);
+    if (!activeFilters.has(ev.domain)) node.classList.add('hidden');
+    const tapArea = document.createElement('div');
+    tapArea.className = 'node-tap-area';
+    node.appendChild(tapArea);
+    node.addEventListener('click', () => openModal(ev.id));
+    attachTooltip(node, ev);
+    nodesLayer.appendChild(node);
+  });
+}
+function repositionNodes() {
+  document.querySelectorAll('.node').forEach(n => {
+    const ev = ALL_EVENTS.find(e => e.id === parseInt(n.dataset.id));
+    if (ev) n.style.left = `${dateToPercent(ev.month, ev.day)}%`;
+  });
+}
+function updateNodeVisibility() {
+  document.querySelectorAll('#nodesLayer .node').forEach(n => {
+    n.classList.toggle('hidden', !activeFilters.has(n.dataset.domain));
+  });
+}
+
+// ── LANE VIEW ──────────────────────────────────────────────────────────────────
+function buildLaneView() {
+  const lv = document.getElementById('laneView'); lv.innerHTML = '';
+  Object.entries(DOMAINS).forEach(([key, d]) => {
+    const active = activeFilters.has(key);
+    const evs = active ? eventsForYear(currentYear).filter(e =>
+      e.domain === key && (zoomedMonth === null || e.month === zoomedMonth + 1)) : [];
+    const lane = document.createElement('div');
+    lane.className = 'lane' + (evs.length ? '' : ' lane-empty');
+    const lc = document.createElement('div'); lc.className = 'lane-label-col';
+    lc.innerHTML = `<span class="lane-icon" title="${d.label}">${d.icon}</span><span class="lane-name" style="color:${d.color}">${d.label}</span>`;
+    lane.appendChild(lc);
+    const track = document.createElement('div'); track.className = 'lane-track';
+    const line = document.createElement('div'); line.className = 'lane-line'; line.style.background = d.color; track.appendChild(line);
+    const ln = document.createElement('div'); ln.className = 'lane-nodes';
+    evs.forEach((ev, i) => {
+      const pct = dateToPercent(ev.month, ev.day);
+      const node = document.createElement('div');
+      node.className = 'node mid' + (ev.art ? ' art' : ''); node.dataset.domain = ev.domain; node.dataset.id = ev.id;
+      node.style.left = `${pct}%`;
+      node.style.background = d.color; node.style.boxShadow = `0 0 8px ${d.color}99`;
+      node.style.setProperty('--delay', `${(i * 0.25) % 2.5}s`);
+      if (currentEventId === ev.id) node.classList.add('active-node');
+      const tapArea = document.createElement('div'); tapArea.className = 'node-tap-area'; node.appendChild(tapArea);
+      node.addEventListener('click', () => openModal(ev.id));
+      attachTooltip(node, ev);
+      ln.appendChild(node);
+      // Label beside the dot — only when there's room before the next dot
+      const nextPct = i < evs.length - 1 ? dateToPercent(evs[i + 1].month, evs[i + 1].day) : 101;
+      const nearRightEdge = pct > 86;
+      if ((nextPct - pct) > 12 || i === evs.length - 1) {
+        const lbl = document.createElement('div');
+        lbl.className = 'lane-node-label' + (nearRightEdge ? ' edge-r' : '');
+        lbl.style.left = pct + '%';
+        lbl.textContent = ev.title;
+        ln.appendChild(lbl);
+      }
+    });
+    track.appendChild(ln); lane.appendChild(track); lv.appendChild(lane);
+  });
+}
+
+// ── FILTERS ────────────────────────────────────────────────────────────────────
+function buildFilterPanel() {
+  const grid = document.getElementById('filterGrid'); grid.innerHTML = '';
+  Object.entries(DOMAINS).forEach(([key, d]) => {
+    const count = eventsForYear(currentYear).filter(e => e.domain === key).length;
+    if (count === 0) return;
+    const pill = document.createElement('div');
+    pill.className = 'filter-pill' + (activeFilters.has(key) ? ' active' : ' inactive');
+    pill.dataset.domain = key;
+    pill.innerHTML = `<span class="pill-dot" style="background:${d.color};box-shadow:0 0 5px ${d.color}66"></span><span class="pill-icon">${d.icon}</span><span class="pill-label">${d.label}</span><span class="pill-count">${count}</span>`;
+    pill.addEventListener('click', () => {
+      if (activeFilters.has(key)) { activeFilters.delete(key); pill.classList.remove('active'); pill.classList.add('inactive'); }
+      else { activeFilters.add(key); pill.classList.add('active'); pill.classList.remove('inactive'); }
+      if (viewMode === 'single') updateNodeVisibility(); else buildLaneView();
+      updateEmptyState();
+    });
+    grid.appendChild(pill);
+  });
+}
+
+function updateEmptyState() {
+  document.getElementById('emptyState').classList.toggle('visible',
+    viewMode === 'single' && visibleEvents().length === 0);
+}
+function setActiveNode(id) {
+  document.querySelectorAll('.node').forEach(n => { n.classList.toggle('active-node', parseInt(n.dataset.id) === id); });
+}
+
+// ── MODAL ──────────────────────────────────────────────────────────────────────
+function openModal(id) {
+  document.getElementById('tooltip').classList.remove('visible');
+  currentEventId = id; renderModal();
+  document.getElementById('modalBackdrop').classList.add('visible');
+  document.getElementById('modalEl').scrollTop = 0;
+}
+function jumpToEvent(id) {
+  const ev = ALL_EVENTS.find(e => e.id === id); if (!ev) return;
+  if (ev.year !== currentYear) { currentEventId = null; goToYear(ev.year); }
+  if (!activeFilters.has(ev.domain)) {
+    activeFilters.add(ev.domain);
+    buildFilterPanel();
+    if (viewMode === 'single') updateNodeVisibility(); else buildLaneView();
+  }
+  openModal(id);
+}
+function closeModal() {
+  document.getElementById('modalBackdrop').classList.remove('visible');
+  setActiveNode(null); currentEventId = null;
+}
+function renderModal() {
+  const ev = ALL_EVENTS.find(e => e.id === currentEventId); if (!ev) return;
+  const d = DOMAINS[ev.domain];
+  const wrap = document.getElementById('modalImageWrap'); wrap.innerHTML = ''; wrap.style.display = 'none';
+  const requestedId = ev.id;
+  getWikiImage(ev).then(img => {
+    if (currentEventId !== requestedId || !img) return;
+    wrap.style.display = '';
+    const image = document.createElement('img'); image.className = 'modal-image';
+    image.src = img.src; image.alt = ev.title;
+    image.onerror = () => { wrap.style.display = 'none'; };
+    wrap.appendChild(image);
+    if (img.credit) {
+      const cr = document.createElement(img.href ? 'a' : 'div'); cr.className = 'modal-image-credit'; cr.textContent = img.credit; if (img.href) { cr.href = img.href; cr.target = '_blank'; cr.rel = 'noopener'; } wrap.appendChild(cr);
+    }
+  });
+  document.getElementById('modalDomainIcon').textContent = d.icon;
+  document.getElementById('modalDomainLabel').textContent = d.label;
+  document.getElementById('modalDomainLabel').style.color = d.color;
+  document.getElementById('modalTitle').textContent = ev.title;
+  document.getElementById('modalDate').textContent = WeftWho.fmtEvDate(ev);
+  document.getElementById('modalText').textContent = ev.body;
+  const linksEl = document.getElementById('modalLinks'); linksEl.innerHTML = '';
+  if (ev.wiki) {
+    const a = document.createElement('a'); a.href = ev.wiki; a.target = '_blank'; a.rel = 'noopener';
+    a.className = 'modal-link'; a.textContent = /wikipedia\.org/.test(ev.wiki) ? '→ Wikipedia' : '→ Read more';
+    a.style.borderColor = d.color + '44'; a.style.color = d.color; linksEl.appendChild(a);
+  }
+  const rep = document.createElement('a'); rep.className = 'report-link'; rep.href = 'report.html?id=' + ev.id; rep.target = '_blank'; rep.rel = 'noopener'; rep.textContent = 'Report an error'; linksEl.appendChild(rep);
+  // Threads — connected events, both directions, in date order
+  const thEl = document.getElementById('modalThreads'); thEl.innerHTML = '';
+  WeftWho.renderResponses(document.getElementById('modalResp'), ev);
+  const respIds = WeftWho.responseIds(ev);
+  const linkedIds = [...(THREAD_MAP.get(ev.id) || [])].filter(i => !respIds.has(i));
+  if (linkedIds.length) {
+    const linked = linkedIds.map(i => ALL_EVENTS.find(e => e.id === i)).filter(Boolean)
+      .sort((a, b) => (a.year * 10000 + a.month * 100 + a.day) - (b.year * 10000 + b.month * 100 + b.day));
+    const lab = document.createElement('div'); lab.className = 'threads-label'; lab.textContent = 'Threads'; thEl.appendChild(lab);
+    linked.forEach(e2 => {
+      const d2 = DOMAINS[e2.domain];
+      const chip = document.createElement('button'); chip.className = 'thread-chip';
+      chip.innerHTML = `<span class="thread-dot" style="background:${d2.color}"></span><span>${e2.title}</span><span class="thread-year">${e2.year}</span>`;
+      chip.addEventListener('click', () => jumpToEvent(e2.id));
+      thEl.appendChild(chip);
+    });
+  }
+  WeftWho.renderChips(document.getElementById('modalWho'), ev);
+
+  const vis = visibleEvents(), idx = vis.findIndex(e => e.id === currentEventId);
+  document.getElementById('navPrev').disabled = idx <= 0;
+  document.getElementById('navNext').disabled = idx >= vis.length - 1;
+  document.getElementById('navCounter').textContent = idx >= 0 ? `${idx + 1} / ${vis.length}` : '';
+  setActiveNode(currentEventId);
+}
+
+// ── STARS ──────────────────────────────────────────────────────────────────────
+(function() {
+  const c = document.getElementById('stars'), x = c.getContext('2d');
+  let w, h, p;
+  function i() {
+    w = c.width = window.innerWidth; h = c.height = window.innerHeight;
+    p = Array.from({ length: 120 }, () => ({
+      x: Math.random() * w, y: Math.random() * h,
+      r: Math.random() * 1.1 + 0.2, a: Math.random() * 0.5 + 0.1,
+      sp: Math.random() * 0.3 + 0.05, ph: Math.random() * Math.PI * 2
+    }));
+  }
+  function d(t) {
+    x.clearRect(0, 0, w, h);
+    p.forEach(s => {
+      const a = s.a * (0.7 + 0.3 * Math.sin(t * 0.001 * s.sp + s.ph));
+      x.beginPath(); x.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+      x.fillStyle = `rgba(180,210,255,${a})`; x.fill();
+    });
+    requestAnimationFrame(d);
+  }
+  window.addEventListener('resize', i); i(); requestAnimationFrame(d);
+})();
+
+// ── START ──────────────────────────────────────────────────────────────────────
+loadData();
+</script>
+</body>
+</html>

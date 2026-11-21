@@ -2,314 +2,120 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#080c14">
-<title>Weft</title>
+<title>Weft 3D</title>
 <style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root { --bg:#080c14; --card:#131d2e; --border:rgba(255,255,255,0.08); --text:#c8d4e8; --dim:#5a6a80; --bright:#e8f0ff; }
+  html, body { height: 100%; background: var(--bg); color: var(--text); font-family: 'Space Grotesk', system-ui, sans-serif; overflow: hidden; }
   @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600&family=Space+Mono:wght@400;700&display=swap');
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  :root {
-    --bg: #080c14; --bg-panel: #0e1520; --bg-card: #131d2e;
-    --border: rgba(255,255,255,0.08); --text: #c8d4e8;
-    --text-dim: #5a6a80; --text-bright: #e8f0ff;
-    --node-size: 18px;
-    --tap: 44px;
+  #scene { position: fixed; inset: 0; }
+  #hud { position: fixed; top: 0; left: 0; right: 0; display: flex; align-items: center; justify-content: space-between; padding: 0.8rem 1.2rem; pointer-events: none; z-index: 5; }
+  .hud-title { font-family: 'Space Mono', monospace; font-weight: 700; font-size: 1.6rem; letter-spacing: 0.1em; color: transparent; background: linear-gradient(135deg,#4a7fc0,#7a5ce0 50%,#c05ca0); -webkit-background-clip: text; background-clip: text; }
+  .hud-sub { font-size: 0.6rem; color: var(--dim); letter-spacing: 0.08em; text-transform: uppercase; margin-top: 0.15rem; }
+  .era-bar { display: flex; gap: 0.4rem; pointer-events: auto; }
+  .era-btn, .hud-link { background: rgba(19,29,46,0.85); border: 1px solid var(--border); color: var(--dim); font-family: 'Space Mono', monospace; font-size: 0.65rem; padding: 0.5rem 0.9rem; border-radius: 8px; cursor: pointer; text-decoration: none; transition: all 0.15s; }
+  .era-btn.active { background: rgba(122,92,224,0.3); color: var(--bright); border-color: rgba(122,92,224,0.5); }
+  .era-btn:hover, .hud-link:hover { color: var(--bright); }
+  .era-btn.mode { color: #e8c878; border-color: rgba(232,200,120,0.4); margin-right: 0.4rem; }
+  #playBtn { background: none; border: 1px solid var(--border); color: var(--bright); border-radius: 50%; width: 24px; height: 24px; font-size: 0.6rem; cursor: pointer; line-height: 1; padding: 0; flex-shrink: 0; }
+  #playBtn:hover { border-color: rgba(122,92,224,0.6); }
+  .nav-row { display: flex; align-items: center; gap: 0.6rem; }
+  .nav-row input { flex: 1; }
+  #help { position: fixed; bottom: 0.8rem; left: 1.2rem; font-family: 'Space Mono', monospace; font-size: 0.55rem; color: var(--dim); z-index: 5; pointer-events: none; }
+  #tip { position: fixed; z-index: 10; background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 0.5rem 0.7rem; pointer-events: none; opacity: 0; transition: opacity 0.1s; max-width: 260px; box-shadow: 0 6px 24px rgba(0,0,0,0.5); }
+  #tip.on { opacity: 1; }
+  .tip-t { font-size: 0.75rem; font-weight: 600; color: var(--bright); }
+  .tip-d { font-family: 'Space Mono', monospace; font-size: 0.55rem; color: var(--dim); margin-top: 0.2rem; }
+  #card { position: fixed; top: 70px; right: 1rem; width: 340px; max-width: calc(100vw - 2rem); max-height: calc(100vh - 120px); overflow-y: auto; background: rgba(19,29,46,0.96); border: 1px solid var(--border); border-radius: 14px; padding: 1.1rem 1.2rem; z-index: 8; display: none; backdrop-filter: blur(6px); }
+  #card.on { display: block; }
+  .card-img { margin: -1.1rem -1.2rem 0.9rem; border-radius: 14px 14px 0 0; overflow: hidden; position: relative; display: none; background: #0b111d; }
+  .card-img img { display: block; width: 100%; max-height: 220px; object-fit: cover; }
+  .card-img .cr { position: absolute; right: 0.5rem; bottom: 0.35rem; font-family: 'Space Mono', monospace; font-size: 0.5rem; text-decoration: none; color: rgba(255,255,255,0.85); text-shadow: 0 1px 3px #000; }
+  .card-close { position: sticky; top: -0.5rem; margin: -0.6rem -0.6rem -32px auto; z-index: 3; width: 32px; height: 32px; border-radius: 50%; background: rgba(8,12,22,0.75); border: 1px solid rgba(255,255,255,0.18); color: #e8ecf4; font-size: 0.95rem; line-height: 1; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+  .card-dom { display: flex; align-items: center; gap: 0.4rem; font-family: 'Space Mono', monospace; font-size: 0.58rem; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 0.4rem; }
+  .card-title { font-size: 1.05rem; font-weight: 600; color: var(--bright); line-height: 1.3; }
+  .card-date { font-family: 'Space Mono', monospace; font-size: 0.58rem; color: var(--dim); margin: 0.25rem 0 0.7rem; }
+  .card-body { font-size: 0.78rem; line-height: 1.6; }
+  .report-link { display: inline-block; margin: 0.8rem 0 0 0.8rem; font-family: 'Space Mono', monospace; font-size: 0.58rem; color: var(--dim); text-decoration: none; }
+  .report-link:hover { text-decoration: underline; }
+  .card-link { display: inline-block; margin-top: 0.8rem; font-family: 'Space Mono', monospace; font-size: 0.62rem; padding: 0.35rem 0.7rem; border: 1px solid; border-radius: 6px; text-decoration: none; }
+  .card-threads { margin-top: 0.9rem; display: flex; flex-wrap: wrap; gap: 0.35rem; }
+  .ct-label { width: 100%; font-family: 'Space Mono', monospace; font-size: 0.55rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--dim); }
+  .ct-chip { display: inline-flex; align-items: center; gap: 0.35rem; background: rgba(255,255,255,0.04); border: 1px solid var(--border); color: var(--text); font-size: 0.66rem; padding: 0.3rem 0.55rem; border-radius: 14px; cursor: pointer; font-family: inherit; text-align: left; }
+  .ct-chip:hover { border-color: rgba(255,255,255,0.3); }
+  .ct-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+  .ct-year { font-family: 'Space Mono', monospace; font-size: 0.55rem; color: var(--dim); }
+  /* NAV SLIDERS — bottom right */
+  #nav { position: fixed; right: 1.2rem; bottom: 1rem; z-index: 6; display: flex; align-items: flex-end; gap: 0.5rem; }
+  .nav-time, .nav-zoom { background: rgba(19,29,46,0.78); border: 1px solid var(--border); border-radius: 14px; backdrop-filter: blur(6px); }
+  .nav-time { display: flex; flex-direction: column; gap: 0.45rem; width: 320px; max-width: 60vw; padding: 0.7rem 1rem 0.85rem; }
+  .nav-zoom { padding: 0.6rem 0.5rem; }
+  .nav-label { display: flex; justify-content: space-between; font-family: 'Space Mono', monospace; font-size: 0.55rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--dim); }
+  .nav-label b { color: var(--bright); font-weight: 700; letter-spacing: 0.05em; }
+  .nav-zoom { display: flex; flex-direction: column; align-items: center; gap: 0.3rem; }
+  .zoom-track { width: 22px; height: 120px; position: relative; }
+  .zoom-track input { position: absolute; width: 120px; left: 50%; top: 50%; transform: translate(-50%, -50%) rotate(-90deg); }
+  .zoom-ico { font-family: 'Space Mono', monospace; font-size: 0.8rem; color: var(--dim); line-height: 1; user-select: none; }
+  #nav input[type=range] { -webkit-appearance: none; appearance: none; height: 4px; border-radius: 2px; background: rgba(255,255,255,0.12); outline: none; cursor: pointer; margin: 0; }
+  #nav input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #c0b0ff, #7a5ce0); box-shadow: 0 0 10px rgba(122,92,224,0.7); border: none; }
+  #nav input[type=range]::-moz-range-thumb { width: 16px; height: 16px; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #c0b0ff, #7a5ce0); box-shadow: 0 0 10px rgba(122,92,224,0.7); border: none; }
+  @media (max-width: 600px) {
+    #nav { right: 0.6rem; bottom: 0.6rem; left: 0.6rem; justify-content: flex-end; }
+    .nav-time { flex: 1; max-width: none; width: auto; }
+    .zoom-track { height: 90px; } .zoom-track input { width: 90px; }
+    #help { display: none; }
+    #hud { flex-direction: column; align-items: stretch; gap: 0.5rem; padding: 0.7rem 0.6rem; }
+    .hud-sub { display: none; }
+    .era-bar { overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
+    .era-bar::-webkit-scrollbar { display: none; }
+    .era-btn, .hud-link { flex-shrink: 0; padding: 0.45rem 0.7rem; }
+    #card { top: auto; bottom: 150px; right: 0.6rem; left: 0.6rem; width: auto; max-height: 50vh; }
   }
-  html, body { height: 100%; background: var(--bg); color: var(--text); font-family: 'Space Grotesk', sans-serif; overflow-x: hidden; -webkit-tap-highlight-color: transparent; }
-  #stars { position: fixed; inset: 0; pointer-events: none; z-index: 0; }
-  .shell { position: relative; z-index: 1; min-height: 100vh; display: flex; flex-direction: column; }
 
-  /* LOADING */
-  #loadScreen { position: fixed; inset: 0; background: var(--bg); display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 1rem; z-index: 100; transition: opacity 0.4s; }
-  #loadScreen.hidden { opacity: 0; pointer-events: none; }
-  .load-title { font-family: 'Space Mono', monospace; font-size: 1.4rem; color: var(--text-bright); letter-spacing: 0.15em; text-transform: uppercase; }
-  .load-sub { font-size: 0.7rem; color: var(--text-dim); }
-  .load-error { color: #e05c5c; font-size: 0.75rem; text-align: center; max-width: 280px; }
-
-  /* HEADER */
-  header { padding: 0.9rem 1rem 0.7rem; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border); gap: 0.5rem; }
-  .year-display { display: flex; align-items: center; gap: 0.5rem; }
-  .year-nav-btn { background: rgba(255,255,255,0.05); border: 1px solid var(--border); color: var(--text-dim); width: var(--tap); height: var(--tap); border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; flex-shrink: 0; transition: all 0.15s; touch-action: manipulation; }
-  .year-nav-btn:active { background: rgba(122,92,224,0.2); }
-  .year-nav-btn:disabled { opacity: 0.2; cursor: default; }
-  .year-label { font-family: 'Space Mono', monospace; font-size: clamp(2.2rem, 10vw, 3.5rem); font-weight: 700; line-height: 1; color: transparent; background: linear-gradient(135deg, #4a7fc0 0%, #7a5ce0 50%, #c05ca0 100%); -webkit-background-clip: text; background-clip: text; letter-spacing: -0.03em; }
-  .header-right { text-align: right; flex-shrink: 0; }
-  .header-right h1 { font-size: 0.6rem; font-weight: 500; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.12em; }
-  .header-right p { font-size: 0.55rem; color: var(--text-dim); margin-top: 0.1rem; }
-  .about-link { color: #e8c878; text-decoration: none; }
-  .about-link:hover { text-decoration: underline; }
-  .ws-input::-webkit-search-cancel-button { display: none; }
-  @media (max-width: 599px) { header { flex-wrap: wrap; } .header-right p { display: none; } }
-
-  /* CONTROLS BAR */
-  .controls { padding: 0.5rem 1rem; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 0.5rem; }
-  .slider-wrap { display: flex; align-items: center; gap: 0.4rem; flex: 1; }
-  .slider-label { font-family: 'Space Mono', monospace; font-size: 0.55rem; color: var(--text-dim); white-space: nowrap; }
-  #yearSlider { flex: 1; height: 4px; -webkit-appearance: none; appearance: none; background: var(--border); border-radius: 2px; outline: none; cursor: pointer; }
-  #yearSlider::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: linear-gradient(135deg,#7a5ce0,#c05ca0); cursor: pointer; box-shadow: 0 0 10px rgba(122,92,224,0.6); }
-  .jump-select { background: var(--bg-card); border: 1px solid var(--border); color: var(--text); font-family: 'Space Mono', monospace; font-size: 0.65rem; padding: 0.4rem 0.4rem; border-radius: 6px; cursor: pointer; outline: none; min-height: var(--tap); }
-  .view-toggle { display: flex; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
-  .toggle-btn { background: none; border: none; color: var(--text-dim); font-family: 'Space Mono', monospace; font-size: 0.58rem; text-transform: uppercase; letter-spacing: 0.06em; padding: 0 0.6rem; cursor: pointer; transition: all 0.15s; white-space: nowrap; min-height: var(--tap); touch-action: manipulation; }
-  .toggle-btn:first-child { border-right: 1px solid var(--border); }
-  .toggle-btn.active { background: rgba(122,92,224,0.25); color: var(--text-bright); }
-
-  /* FILTER PANEL */
-  .filter-panel { padding: 0.6rem 1rem; border-bottom: 1px solid var(--border); background: rgba(14,21,32,0.7); }
-  .filter-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem; }
-  .filter-title { font-family: 'Space Mono', monospace; font-size: 0.58rem; text-transform: uppercase; letter-spacing: 0.12em; color: var(--text-dim); }
-  .filter-actions { display: flex; gap: 0.4rem; }
-  .filter-action-btn { background: none; border: 1px solid var(--border); color: var(--text-dim); font-family: 'Space Mono', monospace; font-size: 0.58rem; text-transform: uppercase; padding: 0.3rem 0.55rem; border-radius: 4px; cursor: pointer; min-height: 32px; touch-action: manipulation; }
-  .filter-action-btn:active { background: rgba(255,255,255,0.07); }
-  .filter-grid { display: flex; flex-wrap: wrap; gap: 0.35rem; }
-  .filter-pill { display: flex; align-items: center; gap: 0.35rem; padding: 0.35rem 0.65rem 0.35rem 0.45rem; border-radius: 20px; border: 1px solid rgba(255,255,255,0.1); cursor: pointer; transition: all 0.15s; user-select: none; background: rgba(255,255,255,0.03); min-height: 34px; touch-action: manipulation; }
-  .filter-pill:active { transform: scale(0.96); }
-  .filter-pill.active { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.2); }
-  .filter-pill.inactive { opacity: 0.3; }
-  .pill-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
-  .pill-icon { font-size: 0.85rem; line-height: 1; }
-  .pill-label { font-size: 0.7rem; font-weight: 500; color: var(--text-bright); white-space: nowrap; }
-  .pill-count { font-family: 'Space Mono', monospace; font-size: 0.6rem; color: var(--text-dim); margin-left: 0.15rem; }
-
-  /* STAGE */
-  .stage { flex: 1; display: flex; flex-direction: column; padding: 0.9rem 1rem 0.8rem; position: relative; }
-  .month-row { display: grid; grid-template-columns: repeat(12, 1fr); margin-bottom: 0.3rem; }
-  .month-label { font-family: 'Space Mono', monospace; font-size: 0.52rem; color: var(--text-dim); text-transform: uppercase; text-align: center; cursor: pointer; padding: 0.35rem 0; min-height: 32px; display: flex; align-items: center; justify-content: center; touch-action: manipulation; transition: color 0.15s; }
-  .month-label:active, .month-label.zoomed { color: var(--text-bright); }
-  .month-label.zoomed { font-weight: 700; }
-
-  /* TIMELINE TRACK */
-  .timeline-track { position: relative; height: 200px; display: flex; align-items: center; }
-  .track-line { position: absolute; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, rgba(74,127,192,0.15) 0%, rgba(122,92,224,0.35) 50%, rgba(192,92,160,0.15) 100%); border-radius: 2px; }
-  .zoom-band { position: absolute; top: 0; bottom: 0; background: rgba(122,92,224,0.06); border-left: 1px solid rgba(122,92,224,0.25); border-right: 1px solid rgba(122,92,224,0.25); pointer-events: none; display: none; }
-  .zoom-band.visible { display: block; }
-  .tick-marks { position: absolute; left: 0; right: 0; top: 50%; transform: translateY(-50%); display: grid; grid-template-columns: repeat(12, 1fr); pointer-events: none; }
-  .tick { display: flex; justify-content: center; }
-  .tick::after { content: ''; display: block; width: 1px; height: 10px; background: var(--border); }
-  .nodes-layer { position: absolute; left: 0; right: 0; top: 0; bottom: 0; }
-
-  /* NODES */
-  .node { position: absolute; transform: translate(-50%,-50%); top: 50%; width: var(--node-size); height: var(--node-size); border-radius: 50%; cursor: pointer; z-index: 2; transition: left 0.3s ease; }
-  .node-tap-area { position: absolute; inset: -14px; border-radius: 50%; }
-  .node::after { content: ''; position: absolute; inset: -4px; border-radius: 50%; background: inherit; opacity: 0.2; animation: pulse 2.5s ease-in-out infinite; animation-delay: var(--delay,0s); }
-  @keyframes pulse { 0%,100%{transform:scale(1);opacity:0.2} 50%{transform:scale(1.8);opacity:0} }
-  .node.upper { top: 22%; }
-  .node.lower { top: 78%; }
-  .node.mid { top: 50%; }
-  .node.active-node { transform: translate(-50%,-50%) scale(2); z-index: 10; filter: brightness(1.6); }
-  .node.active-node::after { animation: pulse-active 0.85s ease-in-out infinite; opacity: 0.5; }
-  @keyframes pulse-active { 0%,100%{transform:scale(1);opacity:0.5} 50%{transform:scale(2.2);opacity:0} }
-  .node.hidden { opacity: 0.05; pointer-events: none; }
-
-  /* LANE VIEW */
-  .lane-view { display: none; flex-direction: column; }
-  .lane-view.visible { display: flex; }
-  .single-view.hidden { display: none; }
-  .lane { display: flex; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.04); min-height: 44px; }
-  .lane:last-child { border-bottom: none; }
-  .lane-label-col { width: 46px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
-  .lane-icon { font-size: 1.1rem; }
-  .lane-track { flex: 1; position: relative; height: 100%; min-height: 44px; display: flex; align-items: center; overflow: hidden; }
-  .lane-line { position: absolute; left: 0; right: 0; height: 2px; opacity: 0.2; }
-  .lane-nodes { position: absolute; left: 0; right: 0; top: 0; bottom: 0; }
-  .lane-empty .lane-line { opacity: 0.06; }
-  .lane-empty .lane-icon, .lane-empty .lane-name { opacity: 0.3; }
-
-  /* EMPTY STATE */
-  .empty-state { display: none; flex-direction: column; align-items: center; justify-content: center; gap: 0.5rem; padding: 2rem; text-align: center; flex: 1; }
-  .empty-state.visible { display: flex; }
-  .empty-icon { font-size: 2rem; opacity: 0.3; }
-  .empty-text { font-size: 0.75rem; color: var(--text-dim); }
-
-  /* FOOTER */
-  footer { padding: 0.5rem 1rem; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
-  .footer-info { font-family: 'Space Mono', monospace; font-size: 0.5rem; color: var(--text-dim); }
-
-  /* MODAL */
-  .modal-backdrop { position: fixed; inset: 0; background: rgba(4,8,16,0.85); z-index: 50; display: flex; align-items: flex-end; opacity: 0; pointer-events: none; transition: opacity 0.25s; backdrop-filter: blur(4px); }
-  .modal-backdrop.visible { opacity: 1; pointer-events: all; }
-  .modal-sheet { background: var(--bg-card); border-radius: 20px 20px 0 0; border: 1px solid var(--border); border-bottom: none; width: 100%; max-height: 85vh; overflow-y: auto; transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.32,0.72,0,1); }
-  .modal-backdrop.visible .modal-sheet { transform: translateY(0); }
-  .drag-handle { width: 36px; height: 4px; background: var(--border); border-radius: 2px; margin: 0.75rem auto 0; }
-  .modal-image-wrap { width: 100%; aspect-ratio: 16/9; overflow: hidden; background: var(--bg-panel); position: relative; }
-  .modal-image { width: 100%; height: 100%; object-fit: cover; }
-  .modal-no-image { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 3rem; opacity: 0.3; }
-  .modal-image-credit { position: absolute; bottom: 0.4rem; right: 0.5rem; font-size: 0.55rem; text-decoration: none; color: rgba(255,255,255,0.75); background: rgba(0,0,0,0.5); padding: 0.15rem 0.3rem; border-radius: 3px; }
-  .modal-body { padding: 1rem 1rem 2rem; }
-  .modal-domain { display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.5rem; }
-  .modal-domain-icon { font-size: 0.9rem; }
-  .modal-domain-label { font-family: 'Space Mono', monospace; font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.1em; }
-  .modal-title { font-size: 1.1rem; font-weight: 600; color: var(--text-bright); line-height: 1.3; margin-bottom: 0.3rem; }
-  .modal-date { font-family: 'Space Mono', monospace; font-size: 0.6rem; color: var(--text-dim); margin-bottom: 0.8rem; }
-  .modal-text { font-size: 0.82rem; line-height: 1.65; color: var(--text); }
-  .modal-links { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 1rem; }
-  .report-link { font-family: 'Space Mono', monospace; font-size: 0.6rem; color: var(--text-dim); text-decoration: none; align-self: center; margin-left: auto; padding: 0.4rem 0; }
-  .report-link:hover { color: var(--text); text-decoration: underline; }
-  .modal-link { font-family: 'Space Mono', monospace; font-size: 0.65rem; padding: 0.4rem 0.75rem; border-radius: 6px; border: 1px solid; text-decoration: none; transition: opacity 0.15s; }
-  .modal-link:active { opacity: 0.7; }
-  .modal-nav { position: sticky; top: 0; z-index: 3; background: var(--bg-card); display: flex; align-items: center; justify-content: space-between; padding: 0.5rem 1rem; border-top: 1px solid var(--border); }
-  .modal-nav-btn { background: rgba(255,255,255,0.05); border: 1px solid var(--border); color: var(--text-dim); width: var(--tap); height: var(--tap); border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1rem; touch-action: manipulation; }
-  .modal-nav-btn:disabled { opacity: 0.2; cursor: default; }
-  .modal-close { background: none; border: none; color: var(--text-dim); font-size: 1.3rem; cursor: pointer; padding: 0.5rem; touch-action: manipulation; }
-  .nav-counter { font-family: 'Space Mono', monospace; font-size: 0.6rem; color: var(--text-dim); }
-
-  /* ART: a fine white ring marks works made in response to events */
-  .node.art { outline: 1.5px solid rgba(255,255,255,0.85); outline-offset: 2.5px; }
-
-  /* THREADS */
-  .modal-threads { margin-top: 1rem; display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center; }
-  .threads-label { width: 100%; font-family: 'Space Mono', monospace; font-size: 0.58rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-dim); }
-  .thread-chip { display: inline-flex; align-items: center; gap: 0.4rem; background: rgba(255,255,255,0.04); border: 1px solid var(--border); color: var(--text); font-size: 0.7rem; padding: 0.35rem 0.6rem; border-radius: 16px; cursor: pointer; font-family: 'Space Grotesk', sans-serif; text-align: left; transition: border-color 0.15s; }
-  .thread-chip:hover, .thread-chip:active { border-color: rgba(255,255,255,0.3); }
-  .thread-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
-  .thread-year { font-family: 'Space Mono', monospace; font-size: 0.58rem; color: var(--text-dim); }
-
-  /* LANE NAMES & NODE LABELS (shown on desktop) */
-  .lane-name { display: none; font-size: 0.68rem; font-weight: 500; letter-spacing: 0.04em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .lane-node-label { position: absolute; top: 50%; transform: translate(13px, -50%); font-size: 0.57rem; color: #7e90ab; white-space: nowrap; max-width: 150px; overflow: hidden; text-overflow: ellipsis; pointer-events: none; display: none; line-height: 1.2; }
-  .lane-node-label.edge-r { transform: translate(calc(-100% - 13px), -50%); }
-
-  /* TOOLTIP (desktop hover) */
-  #tooltip { position: fixed; z-index: 60; background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 0.5rem 0.7rem; pointer-events: none; opacity: 0; transition: opacity 0.12s; max-width: 260px; box-shadow: 0 6px 24px rgba(0,0,0,0.5); }
-  #tooltip.visible { opacity: 1; }
-  .tip-title { font-size: 0.75rem; font-weight: 600; color: var(--text-bright); line-height: 1.3; }
-  .tip-date { font-family: 'Space Mono', monospace; font-size: 0.55rem; color: var(--text-dim); margin-top: 0.2rem; }
-
-  /* DESKTOP LAYOUT */
-  @media (min-width: 900px) {
-    :root { --node-size: 24px; }
-    header { padding: 1.1rem 2rem 0.9rem; }
-    .controls, .filter-panel { padding-left: 2rem; padding-right: 2rem; }
-    .stage { padding: 1.2rem 2rem 1.5rem; }
-    .month-label { font-size: 0.62rem; }
-    .single-view:not(.hidden) { flex: 1; display: flex; flex-direction: column; justify-content: center; }
-    .timeline-track { height: min(56vh, 480px); }
-    .lane-view.visible { flex: 1; overflow: hidden; }
-    .lane { flex: 1 1 0; min-height: 0; }
-    .lane-track { height: 100%; min-height: 0; }
-    .lane-nodes .node { width: 14px; height: 14px; }
-    .lane-label-col { width: 180px; justify-content: flex-start; gap: 0.55rem; padding-left: 0.2rem; }
-    .lane-name { display: inline-block; }
-    .lane-node-label { display: block; }
-    .modal-backdrop { align-items: center; justify-content: center; padding: 2rem; }
-    .modal-sheet { max-width: 700px; border-radius: 20px; border-bottom: 1px solid var(--border); transform: translateY(24px); }
-    .drag-handle { display: none; }
-    .modal-body { padding: 1.4rem 1.8rem 2rem; }
-    .modal-title { font-size: 1.5rem; }
-    .modal-text { font-size: 0.95rem; }
-  }
-  @media (hover: hover) and (pointer: fine) {
-    .node:hover:not(.active-node) { transform: translate(-50%,-50%) scale(1.5); filter: brightness(1.4); z-index: 6; }
-    .filter-pill:hover { border-color: rgba(255,255,255,0.25); }
-    .year-nav-btn:hover:not(:disabled), .modal-nav-btn:hover:not(:disabled) { background: rgba(122,92,224,0.2); color: var(--text-bright); }
-    .toggle-btn:hover:not(.active) { color: var(--text); }
-    .month-label:hover { color: var(--text-bright); }
-  }
+  #loading { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; background: var(--bg); z-index: 20; font-family: 'Space Mono', monospace; letter-spacing: 0.15em; color: var(--bright); transition: opacity 0.4s; }
+  #loading.off { opacity: 0; pointer-events: none; }
 </style>
 </head>
 <body>
-<canvas id="stars"></canvas>
-
-<div id="loadScreen">
-  <div class="load-title">WEFT</div>
-  <div class="load-sub">Loading event data…</div>
-  <div class="load-error" id="loadError" style="display:none"></div>
-</div>
-
-<div class="shell" id="app" style="display:none">
-  <header>
-    <div class="year-display">
-      <button class="year-nav-btn" id="btnPrevYear">&#8592;</button>
-      <div class="year-label" id="yearLabel">1985</div>
-      <button class="year-nav-btn" id="btnNextYear">&#8594;</button>
-    </div>
-    <div class="ws-wrap">
-      <span class="ws-ico">&#9906;</span>
-      <input class="ws-input" id="wsInput" type="search" placeholder="Search people, places, events or dates" autocomplete="off" spellcheck="false" aria-label="Search Weft">
-      <button class="ws-clear" aria-label="Clear search">&#10005;</button>
-      <div class="ws-list" id="wsList"></div>
-    </div>
-    <div class="header-right">
-      <h1><a href="about.html" class="about-link">About Weft</a></h1>
-      <p>Tap any event &middot; Filter by domain</p>
-    </div>
-  </header>
-
-  <div class="controls">
-    <div class="slider-wrap">
-      <span class="slider-label" id="sliderMin">-</span>
-      <input type="range" id="yearSlider" min="0" max="100" value="50">
-      <span class="slider-label" id="sliderMax">-</span>
-    </div>
-    <select class="jump-select" id="jumpYear"></select>
-    <div class="view-toggle">
-      <button class="toggle-btn active" id="btnSingleView">&#8212; Single</button>
-      <button class="toggle-btn" id="btnLaneView">&#8801; Lanes</button>
-      <a class="toggle-btn" href="weft-3d.html?v=20261117" style="display:flex;align-items:center;text-decoration:none;border-left:1px solid var(--border)">&#10022; 3D</a>
-    </div>
-  </div>
-
-  <div class="filter-panel">
-    <div class="filter-header">
-      <span class="filter-title">Domains</span>
-      <div class="filter-actions">
-        <button class="filter-action-btn" id="btnAllOn">All</button>
-        <button class="filter-action-btn" id="btnAllOff">None</button>
-      </div>
-    </div>
-    <div class="filter-grid" id="filterGrid"></div>
-  </div>
-
-  <div class="stage">
-    <div class="month-row" id="monthRow"></div>
-    <div class="single-view" id="singleView">
-      <div class="timeline-track">
-        <div class="track-line"></div>
-        <div class="zoom-band" id="zoomBand"></div>
-        <div class="tick-marks" id="ticks"></div>
-        <div class="nodes-layer" id="nodesLayer"></div>
-      </div>
-    </div>
-    <div class="lane-view" id="laneView"></div>
-    <div class="empty-state" id="emptyState">
-      <div class="empty-icon">✦</div>
-      <div class="empty-text">No events match the current filters</div>
-    </div>
-  </div>
-
-  <footer>
-    <span class="footer-info" id="footerInfo"></span>
-    <span class="footer-info" id="footerYear">1985</span>
-  </footer>
-</div>
-
-<!-- MODAL -->
-<div class="modal-backdrop" id="modalBackdrop">
-  <div class="modal-sheet" id="modalEl">
-    <div class="drag-handle"></div>
-    <div class="modal-image-wrap" id="modalImageWrap"></div>
-    <div class="modal-nav">
-      <button class="modal-nav-btn" id="navPrev">&#8592;</button>
-      <span class="nav-counter" id="navCounter"></span>
-      <button class="modal-close" id="modalClose">&#10005;</button>
-      <button class="modal-nav-btn" id="navNext">&#8594;</button>
-    </div>
-    <div class="modal-body">
-      <div class="modal-domain">
-        <span class="modal-domain-icon" id="modalDomainIcon"></span>
-        <span class="modal-domain-label" id="modalDomainLabel"></span>
-      </div>
-      <div class="modal-title" id="modalTitle"></div>
-      <div class="modal-date" id="modalDate"></div>
-      <div class="modal-text" id="modalText"></div>
-      <div class="modal-links" id="modalLinks"></div>
-      <div class="resp-row" id="modalResp"></div>
-      <div class="modal-threads" id="modalThreads"></div>
-      <div class="who-row" id="modalWho"></div>
-    </div>
+<div id="loading">WEFT&nbsp;3D</div>
+<canvas id="scene"></canvas>
+<div id="hud">
+  <div><div class="hud-title">WEFT</div><div class="hud-sub">The loom &middot; drag to orbit &middot; scroll to zoom &middot; right-drag to pan</div></div>
+  <div class="era-bar">
+    <button class="era-btn mode" id="modeBtn">&#9711; Globe</button>
+    <span id="eraBtns" style="display:contents"></span>
+    <a class="hud-link" id="to2d" href="timeline.html">2D &rarr;</a>
+    <a class="hud-link" href="about.html">About</a>
   </div>
 </div>
-
-<div id="tooltip"><div class="tip-title"></div><div class="tip-date"></div></div>
+<div id="help">click an event for its story &middot; bright strands are threads</div>
+<div id="tip"><div class="tip-t"></div><div class="tip-d"></div></div>
+<div id="nav">
+  <div class="nav-time">
+    <div class="nav-label"><span id="timeStart">—</span><b id="timeNow">—</b><span id="timeEnd">—</span></div>
+    <div class="nav-row"><button id="playBtn" aria-label="Play through time">&#9654;</button><input type="range" id="timeSlider" min="0" max="1000" value="500" aria-label="Move through time"></div>
+  </div>
+  <div class="nav-zoom">
+    <span class="zoom-ico">+</span>
+    <div class="zoom-track"><input type="range" id="zoomSlider" min="0" max="1000" value="400" aria-label="Zoom"></div>
+    <span class="zoom-ico">&minus;</span>
+  </div>
+</div>
+<div id="card">
+  <button class="card-close" id="cardClose">&#10005;</button>
+  <div class="card-img" id="cImg"></div>
+  <div class="card-dom"><span id="cDomIcon"></span><span id="cDomLabel"></span></div>
+  <div class="card-title" id="cTitle"></div>
+  <div class="card-date" id="cDate"></div>
+  <div class="card-body" id="cBody"></div>
+  <a class="card-link" id="cWiki" target="_blank" rel="noopener">&rarr; Wikipedia</a>
+  <a class="report-link" id="cReport" target="_blank" rel="noopener">Report an error</a>
+  <div class="resp-row" id="cResp"></div>
+  <div class="card-threads" id="cThreads"></div>
+  <div class="who-row" id="cWho"></div>
+</div>
 
 <!--WEFT-WHO-->
 <style>
@@ -455,10 +261,10 @@ window.WeftWho = (() => {
 
   // ── Dates at the precision we actually know ──
   function fmtEvDate(e) {
-    const p = e.precision || 'day';
-    if (p === 'year') return String(e.year);
-    if (p === 'month') return `${M[e.month - 1]} ${e.year}`;
-    return `${e.day} ${M[e.month - 1]} ${e.year}`;
+    const p = e.precision || 'day', y = e.year < 0 ? `${-e.year} BC` : e.year;
+    if (p === 'year') return String(y);
+    if (p === 'month') return `${M[e.month - 1]} ${y}`;
+    return `${e.day} ${M[e.month - 1]} ${y}`;
   }
 
   // ── Art as response: what a work answered, and what an event inspired ──
@@ -771,502 +577,813 @@ window.WeftWho = (() => {
     document.addEventListener('keydown', e => { if (e.key === '/' && document.activeElement.tagName !== 'INPUT') { e.preventDefault(); input.focus(); } });
   }
 
-  return { search, mountSearch, init, renderChips, openPerson, openPlace, close, life, fmtDate, fmtPlace, image, world, fmtEvDate, renderResponses, responseIds };
+  // ── Data: a manifest lists one file per century; load them all and merge into one set ──
+  async function loadAll(base = '') {
+    const get = async u => { const r = await fetch(base + u, { cache: 'no-cache' }); if (!r.ok) throw new Error(u + ' ' + r.status); return r.json(); };
+    const m = await get('data/manifest.json');
+    const parts = await Promise.all(m.files.map(f => get(f.file).catch(() => null)));
+    const out = { domains: m.domains, files: m.files, events: [], people: {}, places: {} };
+    parts.forEach(p => { if (!p) return; out.events.push(...p.events); Object.assign(out.people, p.people); Object.assign(out.places, p.places); });
+    out.events.sort((a, b) => (a.year - b.year) || (a.month - b.month) || (a.day - b.day) || (a.id - b.id));
+    return out;
+  }
+
+  return { loadAll, search, mountSearch, init, renderChips, openPerson, openPlace, close, life, fmtDate, fmtPlace, image, world, fmtEvDate, renderResponses, responseIds };
 })();
 </script>
 <!--/WEFT-WHO-->
 
-<script>
-// DATA — loaded from weft-data.json
-let DOMAINS = {};
-let ALL_EVENTS = [];
-let AVAILABLE_YEARS = [];
-let THREAD_MAP = new Map();
+<script type="importmap">
+{ "imports": { "three": "./vendor/three.module.js", "three/addons/controls/OrbitControls.js": "./vendor/OrbitControls.js" } }
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
-const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const GROUPS = [
+  { name: 'POWER & MONEY',  keys: ['politics','conflict','economics','law'] },
+  { name: 'SCIENCE',        keys: ['space','physics','biology','earth','disasters'] },
+  { name: 'MAKING & MOVING',keys: ['tech','transport','exploration','games'] },
+  { name: 'ARTS',           keys: ['visualart','theatre','music','film','literature','architecture','fashion'] },
+  { name: 'LIFE',           keys: ['food','religion','sport','people','society'] },
+];
+// ── TIME SCALE ─────────────────────────────────────────────────────────────────
+// One continuous loom from the earliest century on file to today. It stretches: a year near the present
+// is W0 units wide, and each year further back gets narrower, so centuries — and one day millennia — still fit.
+// Today sits at x = 0 and the past runs off to the left (negative x).
+const W0 = 260, K = 100;
+const NOW = new Date();
+const TNOW = NOW.getFullYear() + NOW.getMonth() / 12 + (NOW.getDate() - 1) / 365.25;
+const xOfT = t => -W0 * K * Math.log(1 + (TNOW - t) / K);
+const tOfX = x => TNOW - K * (Math.exp(-x / (W0 * K)) - 1);
+const widthAt = t => W0 / (1 + (TNOW - t) / K);          // units per year at time t
+const fracYear = (y, m = 7, d = 1) => y + (m - 1) / 12 + (d - 1) / 365.25;
+const evT = e => fracYear(e.year, e.month, e.day);
+let T0 = 1400;                                            // set from the manifest's first century
 
-// State
-const activeFilters = new Set();
-let currentYear = 1985, zoomedMonth = null, currentEventId = null, viewMode = 'single';
+let DOMAINS = {}, ALL_EVENTS = [], THREAD_MAP = new Map(), CENTURIES = [];
 
-// ── LOAD DATA ──────────────────────────────────────────────────────────────────
-async function loadData() {
-  // Try relative path first (for Roxy deployment), then same-directory fallback
-  const candidates = ['weft-data.json', './weft-data.json'];
-  let data = null;
+// ── SCENE ──────────────────────────────────────────────────────────────────────
+const canvas = document.getElementById('scene');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x080c14);
+scene.fog = new THREE.Fog(0x080c14, 1400, 15000);
+const camera = new THREE.PerspectiveCamera(55, 1, 0.5, 40000);
+camera.position.set(40, 120, 330);
+const controls = new OrbitControls(camera, canvas);
+controls.enableDamping = true;
+controls.dampingFactor = 0.08;
+controls.maxDistance = 14000;
+controls.minDistance = 25;
 
-  for (const url of candidates) {
-    try {
-      const res = await fetch(url, { cache: 'no-cache' });
-      if (res.ok) { data = await res.json(); break; }
-    } catch(e) { /* try next */ }
+// Stars: a sky that travels with the camera, so it's there however far back in time you go
+let skyStars;
+{
+  const g = new THREE.BufferGeometry();
+  const n = 9000, pos = new Float32Array(n * 3);
+  for (let i = 0; i < n; i++) {
+    pos[i*3] = (Math.random()-0.5) * 60000;
+    pos[i*3+1] = (Math.random()-0.5) * 30000;
+    pos[i*3+2] = (Math.random()-0.5) * 60000;
   }
-
-  if (!data) {
-    document.getElementById('loadError').textContent =
-      'Could not load weft-data.json. Make sure it is in the same folder as this file.';
-    document.getElementById('loadError').style.display = 'block';
-    document.querySelector('#loadScreen .load-sub').textContent = 'Failed to load data.';
-    return;
-  }
-
-  DOMAINS = data.domains;
-  ALL_EVENTS = data.events;
-  WeftWho.init(data, { onJump: id => { if (innerWidth < 700) WeftWho.close(); jumpToEvent(id); } });
-  WeftWho.mountSearch(document.getElementById('wsInput'), document.getElementById('wsList'));
-
-  // Build bidirectional thread map
-  THREAD_MAP = new Map();
-  ALL_EVENTS.forEach(e => {
-    (e.threads || []).forEach(t => {
-      if (!THREAD_MAP.has(e.id)) THREAD_MAP.set(e.id, new Set());
-      THREAD_MAP.get(e.id).add(t);
-      if (!THREAD_MAP.has(t)) THREAD_MAP.set(t, new Set());
-      THREAD_MAP.get(t).add(e.id);
-    });
-  });
-  AVAILABLE_YEARS = [...new Set(ALL_EVENTS.map(e => e.year))].sort((a, b) => a - b);
-  Object.keys(DOMAINS).forEach(k => activeFilters.add(k));
-
-  // Default to most recent year with data, or 1985
-  currentYear = AVAILABLE_YEARS.includes(1985) ? 1985 : AVAILABLE_YEARS[AVAILABLE_YEARS.length - 1];
-
-  // Hide load screen, show app
-  document.getElementById('loadScreen').classList.add('hidden');
-  document.getElementById('app').style.display = 'flex';
-  document.getElementById('app').style.flexDirection = 'column';
-
-  init();
-
-  // Desktop defaults: lanes view, mouse-friendly hint
-  if (IS_WIDE) setView('lanes');
-  if (HAS_HOVER) document.querySelector('.header-right p').innerHTML = 'Click any event &middot; Hover for titles';
-  prefetchYearImages();
+  g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  skyStars = new THREE.Points(g, new THREE.PointsMaterial({ color: 0xb4d2ff, size: 1.5, transparent: true, opacity: 0.6, sizeAttenuation: false, fog: false }));
+  scene.add(skyStars);
 }
 
-// ── INIT ───────────────────────────────────────────────────────────────────────
-function init() {
-  // Slider
-  const slider = document.getElementById('yearSlider');
-  slider.min = 0;
-  slider.max = AVAILABLE_YEARS.length - 1;
-  slider.value = AVAILABLE_YEARS.indexOf(currentYear);
-  document.getElementById('sliderMin').textContent = AVAILABLE_YEARS[0];
-  document.getElementById('sliderMax').textContent = AVAILABLE_YEARS[AVAILABLE_YEARS.length - 1];
+const world = new THREE.Group();
+scene.add(world);
 
-  // Year select
-  const jumpYear = document.getElementById('jumpYear');
-  AVAILABLE_YEARS.forEach(y => {
-    const o = document.createElement('option');
-    o.value = y; o.textContent = y;
-    jumpYear.appendChild(o);
-  });
-  jumpYear.value = currentYear;
-
-  slider.addEventListener('input', () => {
-    goToYear(AVAILABLE_YEARS[parseInt(slider.value)]);
-  });
-  jumpYear.addEventListener('change', () => {
-    if (jumpYear.value) goToYear(parseInt(jumpYear.value));
-  });
-
-  document.getElementById('btnPrevYear').addEventListener('click', () => {
-    const i = AVAILABLE_YEARS.indexOf(currentYear);
-    if (i > 0) goToYear(AVAILABLE_YEARS[i - 1]);
-  });
-  document.getElementById('btnNextYear').addEventListener('click', () => {
-    const i = AVAILABLE_YEARS.indexOf(currentYear);
-    if (i < AVAILABLE_YEARS.length - 1) goToYear(AVAILABLE_YEARS[i + 1]);
-  });
-
-  // View toggle
-  document.getElementById('btnSingleView').addEventListener('click', () => setView('single'));
-  document.getElementById('btnLaneView').addEventListener('click', () => setView('lanes'));
-
-  // Filter buttons
-  document.getElementById('btnAllOn').addEventListener('click', () => {
-    Object.keys(DOMAINS).forEach(k => activeFilters.add(k));
-    document.querySelectorAll('.filter-pill').forEach(p => { p.classList.add('active'); p.classList.remove('inactive'); });
-    if (viewMode === 'single') updateNodeVisibility(); else buildLaneView();
-    updateEmptyState();
-  });
-  document.getElementById('btnAllOff').addEventListener('click', () => {
-    activeFilters.clear();
-    document.querySelectorAll('.filter-pill').forEach(p => { p.classList.remove('active'); p.classList.add('inactive'); });
-    if (viewMode === 'single') updateNodeVisibility(); else buildLaneView();
-    updateEmptyState();
-  });
-
-  // Modal close
-  document.getElementById('modalClose').addEventListener('click', closeModal);
-  document.getElementById('modalBackdrop').addEventListener('click', e => { if (e.target === document.getElementById('modalBackdrop')) closeModal(); });
-  document.addEventListener('keydown', e => {
-    const modalOpen = document.getElementById('modalBackdrop').classList.contains('visible');
-    if (modalOpen) {
-      if (e.key === 'Escape') closeModal();
-      if (e.key === 'ArrowLeft' && !document.getElementById('navPrev').disabled) document.getElementById('navPrev').click();
-      if (e.key === 'ArrowRight' && !document.getElementById('navNext').disabled) document.getElementById('navNext').click();
-      return;
-    }
-    const tag = document.activeElement && document.activeElement.tagName;
-    if (tag === 'INPUT' || tag === 'SELECT') return;
-    if (e.key === 'ArrowLeft' && !document.getElementById('btnPrevYear').disabled) document.getElementById('btnPrevYear').click();
-    if (e.key === 'ArrowRight' && !document.getElementById('btnNextYear').disabled) document.getElementById('btnNextYear').click();
-  });
-
-  // Modal nav
-  document.getElementById('navPrev').addEventListener('click', () => {
-    const v = visibleEvents(), i = v.findIndex(e => e.id === currentEventId);
-    if (i > 0) { currentEventId = v[i - 1].id; renderModal(); document.getElementById('modalEl').scrollTop = 0; }
-  });
-  document.getElementById('navNext').addEventListener('click', () => {
-    const v = visibleEvents(), i = v.findIndex(e => e.id === currentEventId);
-    if (i < v.length - 1) { currentEventId = v[i + 1].id; renderModal(); document.getElementById('modalEl').scrollTop = 0; }
-  });
-
-  // Swipe gestures
-  const modalEl = document.getElementById('modalEl');
-  let touchStartY = 0, touchStartX = 0;
-  modalEl.addEventListener('touchstart', e => { touchStartY = e.touches[0].clientY; touchStartX = e.touches[0].clientX; }, { passive: true });
-  modalEl.addEventListener('touchend', e => {
-    const dy = e.changedTouches[0].clientY - touchStartY;
-    const dx = Math.abs(e.changedTouches[0].clientX - touchStartX);
-    if (dy > 60 && dx < 60) closeModal();
-    if (dx > 60 && Math.abs(dy) < 60) {
-      const v = visibleEvents(), i = v.findIndex(ev => ev.id === currentEventId);
-      if (e.changedTouches[0].clientX < touchStartX && i < v.length - 1) { currentEventId = v[i + 1].id; renderModal(); }
-      else if (e.changedTouches[0].clientX > touchStartX && i > 0) { currentEventId = v[i - 1].id; renderModal(); }
-    }
-  }, { passive: true });
-
-  updateYearNavBtns();
-  buildMonthRow();
-  buildFilterPanel();
-  renderNodes();
-  updateEmptyState();
-
-  document.getElementById('footerInfo').textContent =
-    `${AVAILABLE_YEARS.length} years · ${ALL_EVENTS.length} events`;
+// Text sprite helper
+function textSprite(text, { size = 26, color = '#c8d4e8', mono = false } = {}) {
+  const c = document.createElement('canvas'), x = c.getContext('2d');
+  const font = `${mono ? '700' : '500'} ${size}px ${mono ? '"Space Mono", monospace' : '"Space Grotesk", sans-serif'}`;
+  x.font = font;
+  const w = Math.ceil(x.measureText(text).width) + 16;
+  c.width = w * 2; c.height = (size + 18) * 2;
+  x.scale(2, 2);
+  x.font = font; x.fillStyle = color; x.textBaseline = 'middle';
+  x.shadowColor = 'rgba(0,0,0,0.8)'; x.shadowBlur = 6;
+  x.fillText(text, 8, (size + 18) / 2);
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  const m = new THREE.Sprite(new THREE.SpriteMaterial({ map: t, transparent: true, depthWrite: false }));
+  m.scale.set(w / 10 * LABEL_K, (size + 18) / 10 * LABEL_K, 1);
+  return m;
 }
 
-// ── HELPERS ────────────────────────────────────────────────────────────────────
-function eventsForYear(y) {
-  return ALL_EVENTS.filter(e => e.year === y).sort((a, b) => (a.month * 100 + a.day) - (b.month * 100 + b.day));
-}
-function visibleEvents() {
-  let e = eventsForYear(currentYear).filter(e => activeFilters.has(e.domain));
-  if (zoomedMonth !== null) e = e.filter(e => e.month === zoomedMonth + 1);
-  return e;
-}
-function dateToPercent(month, day) {
-  return (((month - 1) * 30.44 + day - 1) / 365) * 100;
-}
-const HAS_HOVER = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
-const IS_WIDE = window.matchMedia('(min-width: 900px)').matches;
+// Layout constants
+const LANE_Z = 20, GROUP_EXTRA = 18, STAGGER = 42, LABEL_K = 2.4;
+const DEPTH = 24 * LANE_Z + 4 * GROUP_EXTRA;
+let halos = [];
+function seeded(n) { const x = Math.sin(n * 12.9898) * 43758.5453; return x - Math.floor(x); }
 
-// ── WIKIPEDIA IMAGES ───────────────────────────────────────────────────────────
-const wikiImageCache = new Map();
-function wikiTitleFromUrl(url) {
-  const m = (url || '').match(/\/wiki\/([^#?]+)/);
-  return m ? m[1] : null;
-}
-function getWikiImage(ev) { return WeftWho.image(ev); }
-function prefetchYearImages() {
-  const yearAtStart = currentYear;
-  const evs = eventsForYear(currentYear);
-  let i = 0;
-  (function next() {
-    if (i >= evs.length || currentYear !== yearAtStart) return;
-    getWikiImage(evs[i++]).finally(() => setTimeout(next, 150));
-  })();
-}
+let pickables = [], currentFocusId = null;
 
-// ── TOOLTIP (desktop hover) ────────────────────────────────────────────────────
-function attachTooltip(node, ev) {
-  if (!HAS_HOVER) return;
-  node.addEventListener('mouseenter', () => {
-    const t = document.getElementById('tooltip');
-    t.querySelector('.tip-title').textContent = ev.title;
-    t.querySelector('.tip-date').textContent = `${WeftWho.fmtEvDate(ev)} · ${DOMAINS[ev.domain].label}${ev.art ? ' · art' : ''}`;
-    t.classList.add('visible');
-    const r = node.getBoundingClientRect();
-    const tw = t.offsetWidth, th = t.offsetHeight;
-    let x = r.left + r.width / 2 - tw / 2;
-    x = Math.max(8, Math.min(x, window.innerWidth - tw - 8));
-    let y = r.top - th - 12;
-    if (y < 8) y = r.bottom + 12;
-    t.style.left = x + 'px'; t.style.top = y + 'px';
-  });
-  node.addEventListener('mouseleave', () => document.getElementById('tooltip').classList.remove('visible'));
-}
+function dateX(year, month, day) { return xOfT(fracYear(year, month, day)); }
+function bounds() { return { xL: xOfT(T0), xR: 0 }; }
 
-// ── YEAR NAV ───────────────────────────────────────────────────────────────────
-function goToYear(y) {
-  currentYear = y;
-  zoomedMonth = null;
-  const idx = AVAILABLE_YEARS.indexOf(y);
-  document.getElementById('yearSlider').value = idx;
-  document.getElementById('jumpYear').value = y;
-  document.getElementById('yearLabel').textContent = y;
-  document.getElementById('footerYear').textContent = y;
-  updateYearNavBtns();
-  buildMonthRow();
-  buildFilterPanel();
-  if (viewMode === 'single') { renderNodes(); updateZoomBand(); } else buildLaneView();
-  updateEmptyState();
-  if (currentEventId) closeModal();
-  prefetchYearImages();
-}
-function updateYearNavBtns() {
-  const i = AVAILABLE_YEARS.indexOf(currentYear);
-  document.getElementById('btnPrevYear').disabled = i <= 0;
-  document.getElementById('btnNextYear').disabled = i >= AVAILABLE_YEARS.length - 1;
-}
+function build() {
+  world.clear();
+  pickables = [];
+  const events = ALL_EVENTS;
+  const { xL, xR } = bounds();
+  const posById = new Map();
 
-// ── VIEW ───────────────────────────────────────────────────────────────────────
-function setView(mode) {
-  viewMode = mode;
-  document.getElementById('btnSingleView').classList.toggle('active', mode === 'single');
-  document.getElementById('btnLaneView').classList.toggle('active', mode === 'lanes');
-  document.getElementById('singleView').classList.toggle('hidden', mode === 'lanes');
-  document.getElementById('laneView').classList.toggle('visible', mode === 'lanes');
-  if (mode === 'single') { renderNodes(); updateZoomBand(); } else buildLaneView();
-  updateEmptyState();
-}
+  halos = [];
+  let laneIdx = 0;
+  GROUPS.forEach((grp, gi) => {
+    grp.keys.forEach((key, li) => {
+      const d = DOMAINS[key]; if (!d) { laneIdx++; return; }
+      // Each lane gets its own depth; groups keep their front-to-back order with a small extra gap.
+      const z = -(laneIdx * LANE_Z + gi * GROUP_EXTRA);
+      // Staggered height: a non-repeating wave so neighbouring lanes never sit in a flat sheet.
+      const y = Math.sin(laneIdx * 2.39996) * STAGGER + Math.cos(laneIdx * 0.9) * (STAGGER * 0.35);
+      const col = new THREE.Color(d.color);
 
-// ── MONTH ROW ──────────────────────────────────────────────────────────────────
-function buildMonthRow() {
-  const mr = document.getElementById('monthRow'), tk = document.getElementById('ticks');
-  mr.innerHTML = ''; tk.innerHTML = '';
-  MONTHS.forEach((m, i) => {
-    const el = document.createElement('div');
-    el.className = 'month-label' + (zoomedMonth === i ? ' zoomed' : '');
-    el.textContent = m;
-    el.addEventListener('click', () => {
-      zoomedMonth = (zoomedMonth === i) ? null : i;
-      buildMonthRow(); repositionNodes(); updateZoomBand(); updateEmptyState();
-      if (viewMode === 'lanes') buildLaneView();
-    });
-    mr.appendChild(el);
-    const t = document.createElement('div'); t.className = 'tick'; tk.appendChild(t);
-  });
-}
-function updateZoomBand() {
-  const band = document.getElementById('zoomBand');
-  if (zoomedMonth === null) { band.classList.remove('visible'); return; }
-  band.style.left = `${(zoomedMonth / 12) * 100}%`;
-  band.style.width = `${(1 / 12) * 100}%`;
-  band.classList.add('visible');
-}
-
-// ── NODES ──────────────────────────────────────────────────────────────────────
-const nodesLayer = document.getElementById('nodesLayer');
-function renderNodes() {
-  nodesLayer.querySelectorAll('.node').forEach(n => n.remove());
-  eventsForYear(currentYear).forEach((ev, i) => {
-    const node = document.createElement('div');
-    node.className = `node ${ev.position}`;
-    node.dataset.domain = ev.domain;
-    node.dataset.id = ev.id;
-    if (ev.art) node.classList.add('art');
-    node.style.left = `${dateToPercent(ev.month, ev.day)}%`;
-    node.style.background = DOMAINS[ev.domain].color;
-    node.style.boxShadow = `0 0 8px ${DOMAINS[ev.domain].color}99`;
-    node.style.setProperty('--delay', `${(i * 0.19) % 2.5}s`);
-    if (!activeFilters.has(ev.domain)) node.classList.add('hidden');
-    const tapArea = document.createElement('div');
-    tapArea.className = 'node-tap-area';
-    node.appendChild(tapArea);
-    node.addEventListener('click', () => openModal(ev.id));
-    attachTooltip(node, ev);
-    nodesLayer.appendChild(node);
-  });
-}
-function repositionNodes() {
-  document.querySelectorAll('.node').forEach(n => {
-    const ev = ALL_EVENTS.find(e => e.id === parseInt(n.dataset.id));
-    if (ev) n.style.left = `${dateToPercent(ev.month, ev.day)}%`;
-  });
-}
-function updateNodeVisibility() {
-  document.querySelectorAll('#nodesLayer .node').forEach(n => {
-    n.classList.toggle('hidden', !activeFilters.has(n.dataset.domain));
-  });
-}
-
-// ── LANE VIEW ──────────────────────────────────────────────────────────────────
-function buildLaneView() {
-  const lv = document.getElementById('laneView'); lv.innerHTML = '';
-  Object.entries(DOMAINS).forEach(([key, d]) => {
-    const active = activeFilters.has(key);
-    const evs = active ? eventsForYear(currentYear).filter(e =>
-      e.domain === key && (zoomedMonth === null || e.month === zoomedMonth + 1)) : [];
-    const lane = document.createElement('div');
-    lane.className = 'lane' + (evs.length ? '' : ' lane-empty');
-    const lc = document.createElement('div'); lc.className = 'lane-label-col';
-    lc.innerHTML = `<span class="lane-icon" title="${d.label}">${d.icon}</span><span class="lane-name" style="color:${d.color}">${d.label}</span>`;
-    lane.appendChild(lc);
-    const track = document.createElement('div'); track.className = 'lane-track';
-    const line = document.createElement('div'); line.className = 'lane-line'; line.style.background = d.color; track.appendChild(line);
-    const ln = document.createElement('div'); ln.className = 'lane-nodes';
-    evs.forEach((ev, i) => {
-      const pct = dateToPercent(ev.month, ev.day);
-      const node = document.createElement('div');
-      node.className = 'node mid' + (ev.art ? ' art' : ''); node.dataset.domain = ev.domain; node.dataset.id = ev.id;
-      node.style.left = `${pct}%`;
-      node.style.background = d.color; node.style.boxShadow = `0 0 8px ${d.color}99`;
-      node.style.setProperty('--delay', `${(i * 0.25) % 2.5}s`);
-      if (currentEventId === ev.id) node.classList.add('active-node');
-      const tapArea = document.createElement('div'); tapArea.className = 'node-tap-area'; node.appendChild(tapArea);
-      node.addEventListener('click', () => openModal(ev.id));
-      attachTooltip(node, ev);
-      ln.appendChild(node);
-      // Label beside the dot — only when there's room before the next dot
-      const nextPct = i < evs.length - 1 ? dateToPercent(evs[i + 1].month, evs[i + 1].day) : 101;
-      const nearRightEdge = pct > 86;
-      if ((nextPct - pct) > 12 || i === evs.length - 1) {
-        const lbl = document.createElement('div');
-        lbl.className = 'lane-node-label' + (nearRightEdge ? ' edge-r' : '');
-        lbl.style.left = pct + '%';
-        lbl.textContent = ev.title;
-        ln.appendChild(lbl);
+      if (li === 0) {
+        const gl = textSprite(grp.name, { size: 30, color: '#8a9ab8', mono: true });
+        gl.position.set(xR + 24 + gl.scale.x / 2, y + 26, z);
+        world.add(gl);
       }
+      // faint lane strand
+      // drawn in short pieces: one 50,000-unit segment can fail to render when you're far along it
+      const lpts = []; for (let x = xL; x < xR; x += 400) lpts.push(new THREE.Vector3(x, y, z)); lpts.push(new THREE.Vector3(xR, y, z));
+      const lg = new THREE.BufferGeometry().setFromPoints(lpts);
+      world.add(new THREE.Line(lg, new THREE.LineBasicMaterial({ color: col, transparent: true, opacity: 0.2 })));
+      // lane label
+      const ll = textSprite(d.label, { size: 24, color: d.color });
+      ll.position.set(xR + 14 + ll.scale.x / 2, y + 5, z);
+      world.add(ll);
+      // events, scattered slightly off the strand like stars around a filament
+      events.filter(e => e.domain === key).forEach(ev => {
+        const x = dateX(ev.year, ev.month, ev.day);
+        const jy = (seeded(ev.id) - 0.5) * 11;
+        const jz = (seeded(ev.id * 7 + 3) - 0.5) * 15;
+        const r = 1.7 + seeded(ev.id * 13 + 1) * 1.3;
+        const mesh = new THREE.Mesh(
+          new THREE.SphereGeometry(r, 18, 12),
+          new THREE.MeshBasicMaterial({ color: col })
+        );
+        mesh.position.set(x, y + jy, z + jz);
+        mesh.userData.ev = ev;
+        world.add(mesh);
+        pickables.push(mesh);
+        const halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: haloTex, color: col, transparent: true, opacity: 0.35, depthWrite: false }));
+        halo.scale.set(7 * r, 7 * r, 1);
+        halo.position.copy(mesh.position);
+        halo.userData.phase = seeded(ev.id * 31) * Math.PI * 2;
+        if (ev.art) { const ring = new THREE.Sprite(new THREE.SpriteMaterial({ map: ringTex, transparent: true, opacity: 0.85, depthWrite: false })); ring.scale.set(r * 5.2, r * 5.2, 1); ring.position.copy(mesh.position); world.add(ring); }
+        world.add(halo);
+        halos.push(halo);
+        posById.set(ev.id, mesh.position.clone());
+      });
+      laneIdx++;
     });
-    track.appendChild(ln); lane.appendChild(track); lv.appendChild(lane);
   });
-}
 
-// ── FILTERS ────────────────────────────────────────────────────────────────────
-function buildFilterPanel() {
-  const grid = document.getElementById('filterGrid'); grid.innerHTML = '';
-  Object.entries(DOMAINS).forEach(([key, d]) => {
-    const count = eventsForYear(currentYear).filter(e => e.domain === key).length;
-    if (count === 0) return;
-    const pill = document.createElement('div');
-    pill.className = 'filter-pill' + (activeFilters.has(key) ? ' active' : ' inactive');
-    pill.dataset.domain = key;
-    pill.innerHTML = `<span class="pill-dot" style="background:${d.color};box-shadow:0 0 5px ${d.color}66"></span><span class="pill-icon">${d.icon}</span><span class="pill-label">${d.label}</span><span class="pill-count">${count}</span>`;
-    pill.addEventListener('click', () => {
-      if (activeFilters.has(key)) { activeFilters.delete(key); pill.classList.remove('active'); pill.classList.add('inactive'); }
-      else { activeFilters.add(key); pill.classList.add('active'); pill.classList.remove('inactive'); }
-      if (viewMode === 'single') updateNodeVisibility(); else buildLaneView();
-      updateEmptyState();
-    });
-    grid.appendChild(pill);
-  });
-}
-
-function updateEmptyState() {
-  document.getElementById('emptyState').classList.toggle('visible',
-    viewMode === 'single' && visibleEvents().length === 0);
-}
-function setActiveNode(id) {
-  document.querySelectorAll('.node').forEach(n => { n.classList.toggle('active-node', parseInt(n.dataset.id) === id); });
-}
-
-// ── MODAL ──────────────────────────────────────────────────────────────────────
-function openModal(id) {
-  document.getElementById('tooltip').classList.remove('visible');
-  currentEventId = id; renderModal();
-  document.getElementById('modalBackdrop').classList.add('visible');
-  document.getElementById('modalEl').scrollTop = 0;
-}
-function jumpToEvent(id) {
-  const ev = ALL_EVENTS.find(e => e.id === id); if (!ev) return;
-  if (ev.year !== currentYear) { currentEventId = null; goToYear(ev.year); }
-  if (!activeFilters.has(ev.domain)) {
-    activeFilters.add(ev.domain);
-    buildFilterPanel();
-    if (viewMode === 'single') updateNodeVisibility(); else buildLaneView();
-  }
-  openModal(id);
-}
-function closeModal() {
-  document.getElementById('modalBackdrop').classList.remove('visible');
-  setActiveNode(null); currentEventId = null;
-}
-function renderModal() {
-  const ev = ALL_EVENTS.find(e => e.id === currentEventId); if (!ev) return;
-  const d = DOMAINS[ev.domain];
-  const wrap = document.getElementById('modalImageWrap'); wrap.innerHTML = ''; wrap.style.display = 'none';
-  const requestedId = ev.id;
-  getWikiImage(ev).then(img => {
-    if (currentEventId !== requestedId || !img) return;
-    wrap.style.display = '';
-    const image = document.createElement('img'); image.className = 'modal-image';
-    image.src = img.src; image.alt = ev.title;
-    image.onerror = () => { wrap.style.display = 'none'; };
-    wrap.appendChild(image);
-    if (img.credit) {
-      const cr = document.createElement(img.href ? 'a' : 'div'); cr.className = 'modal-image-credit'; cr.textContent = img.credit; if (img.href) { cr.href = img.href; cr.target = '_blank'; cr.rel = 'noopener'; } wrap.appendChild(cr);
+  // year markers floating in front of the cloud: every year near today, sparser further back
+  const STEPS = [1, 2, 5, 10, 20, 25, 50, 100, 250, 500, 1000];
+  const nowYear = NOW.getFullYear();
+  for (let yr = Math.ceil(T0); yr <= nowYear; yr++) {
+    const w = widthAt(yr), st = STEPS.find(s => s * w >= 130) || 1000;
+    if (yr % st) continue;
+    const yx = dateX(yr, 1, 1), cent = yr % 100 === 0;
+    const yl = textSprite(String(yr), { size: cent ? 46 : 34, color: cent ? '#9aa8c4' : '#6a7a94', mono: true });
+    yl.position.set(yx + Math.min(w, 120) / 2, -STAGGER - 34, 40);
+    world.add(yl);
+    if (cent) {   // a faint gate across the loom at each new century
+      const g = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(yx, -STAGGER - 20, 40), new THREE.Vector3(yx, -STAGGER - 20, -DEPTH - 20)]);
+      world.add(new THREE.Line(g, new THREE.LineBasicMaterial({ color: 0x9aa8c4, transparent: true, opacity: 0.18 })));
     }
-  });
-  document.getElementById('modalDomainIcon').textContent = d.icon;
-  document.getElementById('modalDomainLabel').textContent = d.label;
-  document.getElementById('modalDomainLabel').style.color = d.color;
-  document.getElementById('modalTitle').textContent = ev.title;
-  document.getElementById('modalDate').textContent = WeftWho.fmtEvDate(ev);
-  document.getElementById('modalText').textContent = ev.body;
-  const linksEl = document.getElementById('modalLinks'); linksEl.innerHTML = '';
-  if (ev.wiki) {
-    const a = document.createElement('a'); a.href = ev.wiki; a.target = '_blank'; a.rel = 'noopener';
-    a.className = 'modal-link'; a.textContent = /wikipedia\.org/.test(ev.wiki) ? '→ Wikipedia' : '→ Read more';
-    a.style.borderColor = d.color + '44'; a.style.color = d.color; linksEl.appendChild(a);
   }
-  const rep = document.createElement('a'); rep.className = 'report-link'; rep.href = 'report.html?id=' + ev.id; rep.target = '_blank'; rep.rel = 'noopener'; rep.textContent = 'Report an error'; linksEl.appendChild(rep);
-  // Threads — connected events, both directions, in date order
-  const thEl = document.getElementById('modalThreads'); thEl.innerHTML = '';
-  WeftWho.renderResponses(document.getElementById('modalResp'), ev);
-  const respIds = WeftWho.responseIds(ev);
-  const linkedIds = [...(THREAD_MAP.get(ev.id) || [])].filter(i => !respIds.has(i));
-  if (linkedIds.length) {
-    const linked = linkedIds.map(i => ALL_EVENTS.find(e => e.id === i)).filter(Boolean)
-      .sort((a, b) => (a.year * 10000 + a.month * 100 + a.day) - (b.year * 10000 + b.month * 100 + b.day));
-    const lab = document.createElement('div'); lab.className = 'threads-label'; lab.textContent = 'Threads'; thEl.appendChild(lab);
-    linked.forEach(e2 => {
-      const d2 = DOMAINS[e2.domain];
-      const chip = document.createElement('button'); chip.className = 'thread-chip';
-      chip.innerHTML = `<span class="thread-dot" style="background:${d2.color}"></span><span>${e2.title}</span><span class="thread-year">${e2.year}</span>`;
-      chip.addEventListener('click', () => jumpToEvent(e2.id));
-      thEl.appendChild(chip);
-    });
-  }
-  WeftWho.renderChips(document.getElementById('modalWho'), ev);
+  const today = textSprite('TODAY', { size: 34, color: '#e8c878', mono: true });
+  today.position.set(xR + 10 + today.scale.x / 2, -STAGGER - 34, 40); world.add(today);
+  { const g = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(xR, -STAGGER - 20, 40), new THREE.Vector3(xR, -STAGGER - 20, -DEPTH - 20)]);
+    world.add(new THREE.Line(g, new THREE.LineBasicMaterial({ color: 0xe8c878, transparent: true, opacity: 0.35 }))); }
 
-  const vis = visibleEvents(), idx = vis.findIndex(e => e.id === currentEventId);
-  document.getElementById('navPrev').disabled = idx <= 0;
-  document.getElementById('navNext').disabled = idx >= vis.length - 1;
-  document.getElementById('navCounter').textContent = idx >= 0 ? `${idx + 1} / ${vis.length}` : '';
-  setActiveNode(currentEventId);
+  // threads — glowing strands between connected events in view
+  const drawn = new Set();
+  events.forEach(ev => {
+    (THREAD_MAP.get(ev.id) || new Set()).forEach(id2 => {
+      const k = Math.min(ev.id, id2) + '-' + Math.max(ev.id, id2);
+      if (drawn.has(k)) return; drawn.add(k);
+      const a = posById.get(ev.id), b = posById.get(id2);
+      if (!a || !b) return;
+      // short threads hug the loom; long ones (across decades or centuries) arch high over it, fainter
+      const len = a.distanceTo(b), mid = a.clone().add(b).multiplyScalar(0.5);
+      mid.y += len < 600 ? Math.min(110, len * 0.2 + 12) : 110 + (len - 600) * 0.32;
+      const curve = new THREE.QuadraticBezierCurve3(a, mid, b);
+      const geo = new THREE.BufferGeometry().setFromPoints(curve.getPoints(len < 600 ? 40 : 90));
+      const op = len < 600 ? 0.5 : Math.max(0.14, 0.5 - (len - 600) / 6000);
+      world.add(new THREE.Line(geo, new THREE.LineBasicMaterial({ color: 0xcfd8ff, transparent: true, opacity: op })));
+    });
+  });
+  if (typeof drawLife === 'function') drawLife();
 }
 
-// ── STARS ──────────────────────────────────────────────────────────────────────
-(function() {
-  const c = document.getElementById('stars'), x = c.getContext('2d');
-  let w, h, p;
-  function i() {
-    w = c.width = window.innerWidth; h = c.height = window.innerHeight;
-    p = Array.from({ length: 120 }, () => ({
-      x: Math.random() * w, y: Math.random() * h,
-      r: Math.random() * 1.1 + 0.2, a: Math.random() * 0.5 + 0.1,
-      sp: Math.random() * 0.3 + 0.05, ph: Math.random() * Math.PI * 2
-    }));
-  }
-  function d(t) {
-    x.clearRect(0, 0, w, h);
-    p.forEach(s => {
-      const a = s.a * (0.7 + 0.3 * Math.sin(t * 0.001 * s.sp + s.ph));
-      x.beginPath(); x.arc(s.x, s.y, s.r, 0, Math.PI * 2);
-      x.fillStyle = `rgba(180,210,255,${a})`; x.fill();
-    });
-    requestAnimationFrame(d);
-  }
-  window.addEventListener('resize', i); i(); requestAnimationFrame(d);
+// A thread whose other end lies outside the span on screen: a strand heading off the edge, labelled
+function threadStub(from, other, y0) {
+  if (!other) return;
+  const dir = other.year < y0 ? -1 : 1;
+  const end = from.clone().add(new THREE.Vector3(dir * 170, 80, 0));
+  const mid = from.clone().lerp(end, 0.5); mid.y += 45;
+  const geo = new THREE.BufferGeometry().setFromPoints(new THREE.QuadraticBezierCurve3(from, mid, end).getPoints(30));
+  const ln = new THREE.Line(geo, new THREE.LineDashedMaterial({ color: 0xcfd8ff, dashSize: 5, gapSize: 4, transparent: true, opacity: 0.55 }));
+  ln.computeLineDistances(); world.add(ln);
+  const t = textSprite(`${dir < 0 ? '\u2190 ' : ''}${other.year} \u00b7 ${other.title}${dir > 0 ? ' \u2192' : ''}`, { size: 18, color: '#aab6d0' });
+  t.position.copy(end).add(new THREE.Vector3(dir * t.scale.x / 2, 4, 0));
+  world.add(t);
+}
+
+// halo texture
+// a thin ring that marks works of art
+const ringTex = (() => {
+  const c = document.createElement('canvas'); c.width = c.height = 64;
+  const x = c.getContext('2d');
+  x.strokeStyle = 'rgba(255,255,255,0.95)'; x.lineWidth = 3.5;
+  x.beginPath(); x.arc(32, 32, 26, 0, Math.PI * 2); x.stroke();
+  return new THREE.CanvasTexture(c);
+})();
+const haloTex = (() => {
+  const c = document.createElement('canvas'); c.width = c.height = 64;
+  const x = c.getContext('2d');
+  const g = x.createRadialGradient(32, 32, 0, 32, 32, 32);
+  g.addColorStop(0, 'rgba(255,255,255,0.9)');
+  g.addColorStop(0.35, 'rgba(255,255,255,0.25)');
+  g.addColorStop(1, 'rgba(255,255,255,0)');
+  x.fillStyle = g; x.fillRect(0, 0, 64, 64);
+  return new THREE.CanvasTexture(c);
 })();
 
-// ── START ──────────────────────────────────────────────────────────────────────
-loadData();
+// ── PICKING ────────────────────────────────────────────────────────────────────
+const ray = new THREE.Raycaster();
+const mouse = new THREE.Vector2(-2, -2);
+let hovered = null;
+canvas.addEventListener('pointermove', e => {
+  mouse.set((e.clientX / innerWidth) * 2 - 1, -(e.clientY / innerHeight) * 2 + 1);
+  tipXY = [e.clientX, e.clientY];
+});
+let tipXY = [0, 0];
+canvas.addEventListener('click', () => { if (hovered) openCard(hovered.userData.ev); });
+
+const tip = document.getElementById('tip');
+function updateHover() {
+  ray.setFromCamera(mouse, camera);
+  const list = mode === 'globe' ? (globeSphere ? [globeSphere, ...globePins] : globePins) : pickables;
+  const hit = ray.intersectObjects(list, false)[0];
+  const obj = hit && hit.object !== globeSphere ? hit.object : null;
+  if (obj !== hovered) {
+    if (hovered) hovered.scale.setScalar(hovered.userData.base || 1);
+    hovered = obj;
+    if (hovered) {
+      hovered.scale.setScalar(1.8);
+      const ev = hovered.userData.ev;
+      tip.querySelector('.tip-t').textContent = ev.title;
+      tip.querySelector('.tip-d').textContent = `${WeftWho.fmtEvDate(ev)} · ${DOMAINS[ev.domain].label}${ev.art ? ' · art' : ''}`;
+      tip.classList.add('on');
+      canvas.style.cursor = 'pointer';
+    } else { tip.classList.remove('on'); canvas.style.cursor = 'grab'; }
+  }
+  if (hovered) {
+    tip.style.left = Math.min(tipXY[0] + 14, innerWidth - 270) + 'px';
+    tip.style.top = (tipXY[1] + 14) + 'px';
+  }
+}
+
+// ── CARD ───────────────────────────────────────────────────────────────────────
+const card = document.getElementById('card');
+document.getElementById('cardClose').addEventListener('click', () => { card.classList.remove('on'); currentFocusId = null; });
+function openCard(ev) {
+  currentFocusId = ev.id;
+  const d = DOMAINS[ev.domain];
+  document.getElementById('cDomIcon').textContent = d.icon;
+  const dl = document.getElementById('cDomLabel'); dl.textContent = d.label; dl.style.color = d.color;
+  document.getElementById('cTitle').textContent = ev.title;
+  document.getElementById('cDate').textContent = WeftWho.fmtEvDate(ev);
+  document.getElementById('cBody').textContent = ev.body;
+  const im = document.getElementById('cImg'); im.innerHTML = ''; im.style.display = 'none';
+  WeftWho.image(ev).then(pic => {
+    if (!pic || currentFocusId !== ev.id) return;
+    const img = new Image(); img.alt = ev.title; img.src = pic.src;
+    img.onload = () => { if (currentFocusId === ev.id) im.style.display = 'block'; };
+    img.onerror = () => { im.style.display = 'none'; };
+    im.appendChild(img);
+    const cr = document.createElement(pic.href ? 'a' : 'span'); cr.className = 'cr'; cr.textContent = pic.credit; if (pic.href) { cr.href = pic.href; cr.target = '_blank'; cr.rel = 'noopener'; } im.appendChild(cr);
+  });
+  const w = document.getElementById('cWiki');
+  w.innerHTML = /wikipedia\.org/.test(ev.wiki || '') ? '&rarr; Wikipedia' : '&rarr; Read more';
+  if (ev.wiki) { w.style.display = 'inline-block'; w.href = ev.wiki; w.style.borderColor = d.color + '44'; w.style.color = d.color; }
+  else w.style.display = 'none';
+  document.getElementById('cReport').href = 'report.html?id=' + ev.id;
+  const ct = document.getElementById('cThreads'); ct.innerHTML = '';
+  WeftWho.renderResponses(document.getElementById('cResp'), ev);
+  const respIds = WeftWho.responseIds(ev);
+  const linked = [...(THREAD_MAP.get(ev.id) || [])].filter(i => !respIds.has(i)).map(i => ALL_EVENTS.find(e => e.id === i)).filter(Boolean)
+    .sort((a,b) => (a.year*10000+a.month*100+a.day) - (b.year*10000+b.month*100+b.day));
+  if (linked.length) {
+    const lab = document.createElement('div'); lab.className = 'ct-label'; lab.textContent = 'Threads'; ct.appendChild(lab);
+    linked.forEach(e2 => {
+      const chip = document.createElement('button'); chip.className = 'ct-chip';
+      chip.innerHTML = `<span class="ct-dot" style="background:${DOMAINS[e2.domain].color}"></span><span>${e2.title}</span><span class="ct-year">${e2.year}</span>`;
+      chip.addEventListener('click', () => jumpTo(e2));
+      ct.appendChild(chip);
+    });
+  }
+  WeftWho.renderChips(document.getElementById('cWho'), ev);
+  card.classList.add('on');
+}
+function jumpTo(e2) {
+  openCard(e2);
+  focusEvent(e2);
+}
+
+function focusEvent(ev) {
+  if (mode === 'globe') { focusGlobe(ev); return; }
+  const mesh = pickables.find(m => m.userData.ev.id === ev.id);
+  if (!mesh) return;
+  const p = mesh.position;
+  controls.target.copy(p);
+  const dir = camera.position.clone().sub(controls.target).normalize();
+  camera.position.copy(p.clone().add(dir.multiplyScalar(150)));
+}
+
+
+// ── LIFELINES (people) ─────────────────────────────────────────────────────────
+const lifeGroup = new THREE.Group();
+scene.add(lifeGroup);
+let lifeState = null, lifeLit = [];
+const GOLD = 0xe8c878;
+function clearLife() {
+  lifeGroup.traverse(o => { if (o.geometry) o.geometry.dispose(); if (o.material) { if (o.material.map) o.material.map.dispose(); o.material.dispose(); } });
+  lifeGroup.clear();
+  lifeLit.forEach(m => { m.scale.setScalar(1); m.userData.base = 1; }); lifeLit = [];
+}
+function drawLife() {
+  clearLife();
+  if (typeof drawGlobePath === 'function') drawGlobePath();
+  if (!lifeState || mode === 'globe') return;
+  const { title, L, evs } = lifeState;
+  const { xL, xR } = bounds();
+  const LY = STAGGER + 95, LZ = -DEPTH / 2;
+  const pad = 40;
+  const clampX = x => Math.max(xL - pad, Math.min(xR + pad, x));
+  const xOf = o => dateX(o.year, o.month || 7, o.day || 1);
+  const meshes = evs.map(e => pickables.find(m => m.userData.ev.id === e.id)).filter(Boolean);
+  const b = L && L.born, d = L && L.died;
+  let x0 = b ? xOf(b) : (meshes.length ? Math.min(...meshes.map(m => m.position.x)) : null);
+  let x1 = d ? xOf(d) : (b ? xR + pad : (meshes.length ? Math.max(...meshes.map(m => m.position.x)) : null));
+  if (x0 == null || x1 == null || x1 < xL - pad || x0 > xR + pad) {
+    // This life doesn't cross the era on screen: just a floating name tag
+    const tag = textSprite(`${WEFT_PEOPLE[title].name} — dates not known yet`, { size: 24, color: '#e8c878' });
+    tag.position.set(controls.target.x, LY, LZ); lifeGroup.add(tag);
+    return;
+  }
+  const a = clampX(x0), z = clampX(x1);
+  // the lifeline itself: a thin glowing tube
+  const tube = new THREE.Mesh(
+    new THREE.TubeGeometry(new THREE.LineCurve3(new THREE.Vector3(a, LY, LZ), new THREE.Vector3(z, LY, LZ)), 1, 0.9, 8, false),
+    new THREE.MeshBasicMaterial({ color: GOLD, transparent: true, opacity: 0.85 })
+  );
+  lifeGroup.add(tube);
+  const name = WEFT_PEOPLE[title].name;
+  const span = `${b ? WeftWho.fmtDate({ year: b.year }) : '?'}–${d ? d.year : (b ? 'today' : '?')}`;
+  const nameTag = textSprite(`${name}  ${span}`, { size: 30, color: '#e8c878' });
+  nameTag.position.set(a + nameTag.scale.x / 2, LY + 16, LZ); lifeGroup.add(nameTag);
+  // ends: a marker if birth/death falls inside the era, an arrow-label if outside
+  const end = (o, kind, x) => {
+    const inside = x >= xL && x <= xR;
+    const where = o.place ? WeftWho.fmtPlace(o.place) : '';
+    if (inside) {
+      const s = new THREE.Mesh(new THREE.SphereGeometry(3.4, 20, 14), new THREE.MeshBasicMaterial({ color: kind === 'Born' ? 0xffffff : 0xe8c878 }));
+      s.position.set(x, LY, LZ); lifeGroup.add(s);
+      const h = new THREE.Sprite(new THREE.SpriteMaterial({ map: haloTex, color: GOLD, transparent: true, opacity: 0.6, depthWrite: false }));
+      h.scale.set(26, 26, 1); h.position.copy(s.position); lifeGroup.add(h);
+    }
+    const txt = inside ? `${kind} ${WeftWho.fmtDate(o)}${where ? ' · ' + where : ''}` :
+      (kind === 'Born' ? `← born ${o.year}${where ? ', ' + where : ''}` : `died ${o.year}${where ? ', ' + where : ''} →`);
+    const t = textSprite(txt, { size: 22, color: '#c8b080' });
+    t.position.set(x + (kind === 'Born' ? t.scale.x / 2 : -t.scale.x / 2), LY - 12, LZ); lifeGroup.add(t);
+  };
+  if (b) end(b, 'Born', a);
+  if (d) end(d, 'Died', z);
+  // On first showing (and again once Wikidata answers), move the camera to frame the whole life
+  const key = title + (L ? ':L' : '');
+  if (lifeState.framed !== key) {
+    lifeState.framed = key;
+    const cx = (a + z) / 2, cy = LY * 0.45;
+    const fit = ((z - a) / 2 + 90) / (Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * Math.max(camera.aspect, 0.6));
+    const dist = Math.min(Math.max(fit + DEPTH / 2, 380), 6000);
+    const dir = camera.position.clone().sub(controls.target).normalize();
+    controls.target.set(cx, cy, LZ);
+    camera.position.copy(controls.target).add(dir.multiplyScalar(dist));
+  }
+  // drop a dashed thread from the lifeline to each of their events
+  meshes.forEach(m => {
+    const g = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(m.position.x, LY, LZ), m.position.clone()]);
+    const ln = new THREE.Line(g, new THREE.LineDashedMaterial({ color: GOLD, dashSize: 4, gapSize: 3, transparent: true, opacity: 0.75 }));
+    ln.computeLineDistances(); lifeGroup.add(ln);
+    const k = new THREE.Mesh(new THREE.SphereGeometry(1.6, 12, 8), new THREE.MeshBasicMaterial({ color: GOLD }));
+    k.position.set(m.position.x, LY, LZ); lifeGroup.add(k);
+    m.scale.setScalar(1.7); m.userData.base = 1.7; lifeLit.push(m);
+  });
+}
+let WEFT_PEOPLE = {};
+
+// ── GETTING ABOUT ──────────────────────────────────────────────────────────────
+// Frame `span` years centred on time t, looking along the loom from just in front and to the right.
+function goTo(t, span = 4) {
+  t = Math.max(T0, Math.min(TNOW, t));
+  const halfW = (xOfT(Math.min(TNOW, t + span / 2)) - xOfT(t - span / 2)) / 2 + 60;
+  const fit = halfW / (Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * Math.max(camera.aspect, 0.6));
+  const dist = Math.max(650, Math.min(fit + DEPTH / 2, controls.maxDistance * 0.8));
+  const tx = xOfT(t);
+  const tgt = new THREE.Vector3(tx, -STAGGER * 0.6, -DEPTH / 2), pos = new THREE.Vector3(tx + dist * 0.28, dist * 0.32, -DEPTH / 2 + dist * 0.92);
+  if (mode === 'globe') { globeT = t; updateGlobeTime(); loomCam = { pos, tgt }; }
+  else { controls.target.copy(tgt); camera.position.copy(pos); }
+  card.classList.remove('on');
+}
+// The opening view: stand just past today and look back along the loom into the past,
+// with the lane names beside you.
+function goNow() {
+  const narrow = camera.aspect < 0.8;
+  const tgt = new THREE.Vector3(narrow ? 25 : -150, narrow ? 10 : 0, -DEPTH / 2);
+  const pos = new THREE.Vector3(narrow ? 210 : 330, narrow ? 120 : 120, -DEPTH / 2 + (narrow ? 700 : 430));
+  if (mode === 'globe') { globeT = TNOW; updateGlobeTime(); loomCam = { pos, tgt }; }
+  else { controls.target.copy(tgt); camera.position.copy(pos); }
+  card.classList.remove('on');
+}
+// A century button goes to where that century's events are; an empty century shows its middle.
+function goCentury(c) {
+  const evs = ALL_EVENTS.filter(e => e.year >= c.from && e.year <= c.to);
+  if (!evs.length) { goTo(c.from + 50, 20); return; }
+  const ts = evs.map(evT).sort((a, b) => a - b), mid = ts[Math.floor(ts.length / 2)];
+  goTo(mid, Math.max(8, Math.min(12, ts[ts.length - 1] - ts[0])));
+}
+function makeEraButtons() {
+  const box = document.getElementById('eraBtns'); box.innerHTML = '';
+  CENTURIES.forEach(c => {
+    const b = document.createElement('button'); b.className = 'era-btn'; b.dataset.era = c.name; b.textContent = c.name;
+    b.addEventListener('click', () => goCentury(c)); box.appendChild(b);
+  });
+  const n = document.createElement('button'); n.className = 'era-btn'; n.dataset.era = 'now'; n.textContent = 'Today';
+  n.addEventListener('click', goNow); box.appendChild(n);
+}
+function syncEraButtons() {
+  const t = mode === 'globe' ? globeT : tOfX(controls.target.x);
+  const c = CENTURIES.find(c => t >= c.from && t < c.to + 1);
+  const active = t > TNOW - 1 ? 'now' : c ? c.name : '';
+  document.querySelectorAll('.era-btn[data-era]').forEach(b => b.classList.toggle('active', b.dataset.era === active));
+  document.getElementById('to2d').href = 'timeline.html' + (t > TNOW - 1 ? '' : '?year=' + Math.floor(t));
+}
+
+// ── SLIDERS ────────────────────────────────────────────────────────────────────
+const timeSlider = document.getElementById('timeSlider');
+const zoomSlider = document.getElementById('zoomSlider');
+const SHORT_M = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+let draggingTime = false, draggingZoom = false;
+
+function tLabel(t) {
+  t = Math.max(T0, Math.min(TNOW, t));
+  if (t > TNOW - 1 / 24) return 'Today';
+  const y = Math.floor(t), m = Math.min(11, Math.floor((t - y) * 12));
+  const yr = y < 0 ? `${-y} BC` : y;
+  return widthAt(t) >= 40 ? `${SHORT_M[m]} ${yr}` : String(yr);
+}
+function xToLabel(x) { return tLabel(tOfX(x)); }
+const tToSlider = t => (xOfT(t) - bounds().xL) / (bounds().xR - bounds().xL) * 1000;
+const sliderToT = v => tOfX(bounds().xL + (bounds().xR - bounds().xL) * v / 1000);
+// Zoom: logarithmic, top of the slider = closest
+function zoomToDist(v) {
+  const mn = controls.minDistance, mx = controls.maxDistance;
+  return mn * Math.pow(mx / mn, 1 - v / 1000);
+}
+function distToZoom(d) {
+  const mn = controls.minDistance, mx = controls.maxDistance;
+  return (1 - Math.log(d / mn) / Math.log(mx / mn)) * 1000;
+}
+
+timeSlider.addEventListener('pointerdown', () => draggingTime = true);
+timeSlider.addEventListener('pointerup', () => draggingTime = false);
+timeSlider.addEventListener('input', () => {
+  if (mode === 'globe') {
+    globeT = sliderToT(+timeSlider.value); updateGlobeTime();
+    document.getElementById('timeNow').textContent = tLabel(globeT);
+    return;
+  }
+  const { xL, xR } = bounds();
+  const x = xL + (xR - xL) * (timeSlider.value / 1000);
+  const dx = x - controls.target.x;
+  controls.target.x += dx;
+  camera.position.x += dx;
+  document.getElementById('timeNow').textContent = xToLabel(x);
+});
+zoomSlider.addEventListener('pointerdown', () => draggingZoom = true);
+zoomSlider.addEventListener('pointerup', () => draggingZoom = false);
+zoomSlider.addEventListener('input', () => {
+  const dir = camera.position.clone().sub(controls.target).normalize();
+  camera.position.copy(controls.target).add(dir.multiplyScalar(zoomToDist(+zoomSlider.value)));
+});
+
+addEventListener('pointerup', () => { draggingTime = false; draggingZoom = false; });
+addEventListener('pointercancel', () => { draggingTime = false; draggingZoom = false; });
+
+function syncSliders() {
+  const { xL, xR } = bounds();
+  document.getElementById('timeStart').textContent = T0 < 0 ? `${-T0} BC` : T0;
+  document.getElementById('timeEnd').textContent = 'Today';
+  if (mode === 'globe') {
+    if (!draggingTime) { timeSlider.value = tToSlider(globeT); document.getElementById('timeNow').textContent = tLabel(globeT); }
+  } else if (!draggingTime) {
+    const t = (controls.target.x - xL) / (xR - xL);
+    timeSlider.value = Math.max(0, Math.min(1000, t * 1000));
+    document.getElementById('timeNow').textContent = xToLabel(Math.max(xL, Math.min(xR, controls.target.x)));
+  }
+  if (!draggingZoom) zoomSlider.value = distToZoom(camera.position.distanceTo(controls.target));
+  syncEraButtons();
+}
+
+// ── RESIZE / LOOP ──────────────────────────────────────────────────────────────
+function resize() {
+  renderer.setSize(innerWidth, innerHeight);
+  camera.aspect = innerWidth / innerHeight;
+  camera.updateProjectionMatrix();
+}
+addEventListener('resize', resize);
+resize();
+
+let playing = false, lastFrame = 0;
+const playBtn = document.getElementById('playBtn');
+playBtn.addEventListener('click', () => { playing = !playing; playBtn.innerHTML = playing ? '&#10073;&#10073;' : '&#9654;'; });
+function advancePlay(dt) {
+  if (!playing) return;
+  const unitsPerSec = 40, du = unitsPerSec * dt / 1000;
+  if (mode === 'globe') {
+    globeT += du / widthAt(globeT);
+    if (globeT >= TNOW) { globeT = TNOW; playing = false; playBtn.innerHTML = '&#9654;'; }
+    updateGlobeTime();
+  } else {
+    const { xR } = bounds(), dx = Math.min(du, xR - controls.target.x);
+    controls.target.x += dx; camera.position.x += dx;
+    if (dx <= 0) { playing = false; playBtn.innerHTML = '&#9654;'; }
+  }
+}
+function loop(t = 0) {
+  advancePlay(Math.min(100, t - (lastFrame || t))); lastFrame = t;
+  const s = t * 0.0012;
+  for (const h of halos) h.material.opacity = 0.22 + 0.16 * Math.sin(s + h.userData.phase);
+  controls.update();
+  if (skyStars) skyStars.position.copy(camera.position);
+  syncSliders();
+  updateHover();
+  renderer.render(scene, camera);
+  requestAnimationFrame(loop);
+}
+
+
+// ── GLOBE ──────────────────────────────────────────────────────────────────────
+// Earth drawn as glowing coastlines; events as pins; threads as arcs over the planet.
+let mode = 'loom';
+const GR = 200;
+const globeGroup = new THREE.Group(); globeGroup.visible = false; scene.add(globeGroup);
+const globeBase = new THREE.Group(); globeGroup.add(globeBase);
+const globeDyn = new THREE.Group(); globeGroup.add(globeDyn);
+const globeLabels = new THREE.Group(); globeGroup.add(globeLabels);
+const globePath = new THREE.Group(); globeGroup.add(globePath);
+let globePins = [], globeArcs = [], globeT = 0, globeLastT = null, globeBuilt = false, globeSphere = null, globeBaseBuilt = false;
+let loomCam = null;
+
+function ll(lat, lon, r = GR) {
+  const phi = (90 - lat) * Math.PI / 180, th = (lon + 180) * Math.PI / 180;
+  return new THREE.Vector3(-r * Math.sin(phi) * Math.cos(th), r * Math.cos(phi), r * Math.sin(phi) * Math.sin(th));
+}
+function placeOf(e) { const p = e && e.place && WEFT_PLACES[e.place]; return p && p.lat != null ? p : null; }
+let WEFT_PLACES = {};
+
+async function buildGlobeBase() {
+  if (globeBaseBuilt) return; globeBaseBuilt = true;
+  globeSphere = new THREE.Mesh(new THREE.SphereGeometry(GR - 0.6, 72, 54), new THREE.MeshBasicMaterial({ color: 0x07101f }));
+  globeBase.add(globeSphere);
+  const atmo = new THREE.Sprite(new THREE.SpriteMaterial({ map: haloTex, color: 0x3a70c0, transparent: true, opacity: 0.55, depthTest: false, depthWrite: false }));
+  atmo.scale.set(GR * 2.75, GR * 2.75, 1); atmo.renderOrder = -1; globeBase.add(atmo);
+  // graticule
+  const grat = [];
+  for (let la = -60; la <= 60; la += 30) for (let lo = -180; lo < 180; lo += 4) grat.push(ll(la, lo, GR + 0.1), ll(la, lo + 4, GR + 0.1));
+  for (let lo = -180; lo < 180; lo += 30) for (let la = -88; la < 88; la += 4) grat.push(ll(la, lo, GR + 0.1), ll(la + 4, lo, GR + 0.1));
+  globeBase.add(new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(grat), new THREE.LineBasicMaterial({ color: 0x5ca0e0, transparent: true, opacity: 0.07 })));
+  const w = await WeftWho.world();
+  if (!w) return;
+  const seg = (arr, r) => { const pts = []; arr.forEach(a => { for (let i = 2; i < a.length; i += 2) pts.push(ll(a[i - 1] / 10, a[i - 2] / 10, r), ll(a[i + 1] / 10, a[i] / 10, r)); }); return new THREE.BufferGeometry().setFromPoints(pts); };
+  globeBase.add(new THREE.LineSegments(seg(w.borders, GR + 0.25), new THREE.LineBasicMaterial({ color: 0x5ca0e0, transparent: true, opacity: 0.2 })));
+  globeBase.add(new THREE.LineSegments(seg(w.coast, GR + 0.3), new THREE.LineBasicMaterial({ color: 0x7ab8f0, transparent: true, opacity: 0.8 })));
+}
+
+function disposeGroup(g) {
+  g.traverse(o => { if (o.geometry) o.geometry.dispose(); if (o.material) { if (o.material.map && o.material.map !== haloTex && o.material.map !== ringTex) o.material.map.dispose(); o.material.dispose(); } });
+  g.clear();
+}
+
+function buildGlobe() {
+  disposeGroup(globeDyn); globePins = []; globeArcs = []; globeLastT = null; globeBuilt = true;
+  const evs = ALL_EVENTS.filter(e => placeOf(e));
+  const stack = {};
+  const tipById = new Map();
+  evs.forEach(e => {
+    const p = placeOf(e), d = DOMAINS[e.domain], col = new THREE.Color(d.color);
+    // several events at one place spread into a small cluster of stars around the spot
+    const k = stack[e.place] = (stack[e.place] || 0) + 1;
+    const ang = (k - 1) * 2.39996, rad = k === 1 ? 0 : 0.55 * Math.sqrt(k - 1);
+    const la = p.lat + rad * Math.sin(ang), lo = p.lon + rad * Math.cos(ang) / Math.max(0.3, Math.cos(p.lat * Math.PI / 180));
+    const h = 6 + ((k - 1) % 4) * 1.6;
+    const stalk = new THREE.Line(new THREE.BufferGeometry().setFromPoints([ll(p.lat, p.lon, GR + 0.3), ll(la, lo, GR + h)]),
+      new THREE.LineBasicMaterial({ color: col, transparent: true, opacity: 0.5 }));
+    const head = new THREE.Mesh(new THREE.SphereGeometry(1.9, 14, 10), new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: 1 }));
+    head.position.copy(ll(la, lo, GR + h));
+    const halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: haloTex, color: col, transparent: true, opacity: 0.5, depthWrite: false }));
+    halo.scale.set(13, 13, 1); halo.position.copy(head.position);
+    head.userData = { ev: e, t: evT(e), stalk, halo, base: 1, tip: ll(la, lo, GR + h) };
+    globeDyn.add(stalk, head, halo); globePins.push(head); tipById.set(e.id, head);
+    if (e.art) { const ring = new THREE.Sprite(new THREE.SpriteMaterial({ map: ringTex, transparent: true, opacity: 0.9, depthWrite: false })); ring.scale.set(8, 8, 1); ring.position.copy(head.position); globeDyn.add(ring); head.userData.ring = ring; }
+  });
+  // threads as great-circle arcs, lifted off the surface in proportion to their length
+  const done = new Set();
+  evs.forEach(e => (THREAD_MAP.get(e.id) || new Set()).forEach(id2 => {
+    const key = Math.min(e.id, id2) + '-' + Math.max(e.id, id2); if (done.has(key)) return; done.add(key);
+    const A = tipById.get(e.id), B = tipById.get(id2); if (!A || !B) return;
+    const a = A.userData.tip.clone().normalize(), b = B.userData.tip.clone().normalize();
+    const ang = a.angleTo(b);
+    if (ang < 0.004) return; // same place: the stacked pins already show it
+    const lift = Math.min(110, ang * GR * 0.45) + 6;
+    const pts = [];
+    for (let i = 0; i <= 64; i++) {
+      const f = i / 64;
+      const v = new THREE.Vector3().copy(a).multiplyScalar(Math.sin((1 - f) * ang)).add(b.clone().multiplyScalar(Math.sin(f * ang))).divideScalar(Math.sin(ang));
+      pts.push(v.multiplyScalar(GR + 6 + Math.sin(Math.PI * f) * lift));
+    }
+    const line = new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineBasicMaterial({ color: 0xcfe0ff, transparent: true, opacity: 0.12 }));
+    line.userData = { ta: A.userData.t, tb: B.userData.t };
+    globeDyn.add(line); globeArcs.push(line);
+  }));
+  updateGlobeTime(true);
+}
+
+// how far either side of the moment a pin stays lit: half a year near today, wider in the thinner past
+function globeWindow() { return Math.max(0.5, (TNOW - globeT) / 100); }
+function updateGlobeTime(force) {
+  if (!force && globeLastT === globeT) return;
+  globeLastT = globeT;
+  const W = globeWindow();
+  const litPins = [];
+  globePins.forEach(h => {
+    const d = Math.abs(h.userData.t - globeT), lit = d <= W;
+    h.userData.base = lit ? 1.35 : 0.7;
+    if (h !== hovered) h.scale.setScalar(h.userData.base);
+    h.material.opacity = lit ? 1 : 0.28;
+    h.userData.stalk.material.opacity = lit ? 0.85 : 0.14;
+    h.userData.halo.material.opacity = lit ? 0.55 * (1 - d / W * 0.6) : 0;
+    if (h.userData.ring) h.userData.ring.material.opacity = lit ? 0.9 : 0.15;
+    if (lit) litPins.push([d, h]);
+  });
+  globeArcs.forEach(l => {
+    const lit = Math.abs(l.userData.ta - globeT) <= W || Math.abs(l.userData.tb - globeT) <= W;
+    l.material.opacity = lit ? 0.85 : 0.03;
+  });
+  // name the events lit right now (nearest in time first)
+  disposeGroup(globeLabels);
+  litPins.sort((a, b) => a[0] - b[0]).slice(0, 14).forEach(([, h]) => {
+    const e = h.userData.ev, p = placeOf(e);
+    const t = textSprite(e.title, { size: 16, color: DOMAINS[e.domain].color });
+    t.scale.multiplyScalar(0.55);
+    t.position.copy(h.userData.tip.clone().setLength(h.userData.tip.length() + 9));
+    globeLabels.add(t);
+  });
+}
+
+async function setMode(m) {
+  if (m === mode) return;
+  if (m === 'globe') {
+    globeT = Math.max(T0, Math.min(TNOW, tOfX(controls.target.x)));
+    loomCam = { pos: camera.position.clone(), tgt: controls.target.clone() };
+    mode = 'globe';
+    world.visible = false; lifeGroup.visible = false; globeGroup.visible = true;
+    await buildGlobeBase();
+    if (!globeBuilt) buildGlobe(); else updateGlobeTime(true);
+    controls.target.set(0, 0, 0);
+    camera.position.copy(ll(18, 25, GR * 3.3));
+    controls.autoRotate = true; controls.autoRotateSpeed = 0.35;
+  } else {
+    mode = 'loom';
+    controls.autoRotate = false;
+    world.visible = true; lifeGroup.visible = true; globeGroup.visible = false;
+    if (loomCam) { camera.position.copy(loomCam.pos); controls.target.copy(loomCam.tgt); }
+    const dx = xOfT(globeT) - controls.target.x;   // carry the date across
+    controls.target.x += dx; camera.position.x += dx;
+  }
+  document.getElementById('modeBtn').innerHTML = mode === 'globe' ? '&#8801; Loom' : '&#9711; Globe';
+  if (hovered) { hovered = null; tip.classList.remove('on'); }
+  drawLife();
+}
+controls.addEventListener('start', () => { controls.autoRotate = false; });
+
+function focusGlobe(e) {
+  const p = placeOf(e); if (!p) return;
+  globeT = evT(e); updateGlobeTime();
+  controls.autoRotate = false;
+  const dist = Math.max(GR * 1.9, camera.position.length());
+  camera.position.copy(ll(p.lat, p.lon, dist));
+}
+
+// a person's journey: birthplace → the places of their events → where they died
+function drawGlobePath() {
+  disposeGroup(globePath);
+  if (!lifeState || mode !== 'globe') return;
+  const { title, L, evs } = lifeState;
+  const stops = [];
+  const add = (lat, lon, kind, text) => {
+    if (lat == null || lon == null) return;
+    const last = stops[stops.length - 1];
+    if (last && Math.abs(last.lat - lat) < 0.05 && Math.abs(last.lon - lon) < 0.05) { if (kind !== 'ev') last.kind = kind, last.text = text; return; }
+    stops.push({ lat, lon, kind, text });
+  };
+  if (L && L.born && L.born.place) add(L.born.place.lat, L.born.place.lon, 'born', `Born ${L.born.year} · ${WeftWho.fmtPlace(L.born.place)}`);
+  evs.forEach(e => { const p = placeOf(e); if (p) add(p.lat, p.lon, 'ev', ''); });
+  if (L && L.died && L.died.place) add(L.died.place.lat, L.died.place.lon, 'died', `Died ${L.died.year} · ${WeftWho.fmtPlace(L.died.place)}`);
+  if (!stops.length) return;
+  const GOLDc = new THREE.Color(0xe8c878);
+  for (let i = 1; i < stops.length; i++) {
+    const a = ll(stops[i - 1].lat, stops[i - 1].lon, 1), b = ll(stops[i].lat, stops[i].lon, 1), ang = a.angleTo(b);
+    if (ang < 0.003) continue;
+    const lift = Math.min(90, ang * GR * 0.4) + 4, pts = [];
+    for (let j = 0; j <= 64; j++) {
+      const f = j / 64;
+      const v = a.clone().multiplyScalar(Math.sin((1 - f) * ang)).add(b.clone().multiplyScalar(Math.sin(f * ang))).divideScalar(Math.sin(ang));
+      pts.push(v.multiplyScalar(GR + 3 + Math.sin(Math.PI * f) * lift));
+    }
+    globePath.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 64, 0.7, 6, false), new THREE.MeshBasicMaterial({ color: GOLDc, transparent: true, opacity: 0.9 })));
+  }
+  stops.forEach(s => {
+    const pos = ll(s.lat, s.lon, GR + 3);
+    const big = s.kind !== 'ev';
+    const m = new THREE.Mesh(new THREE.SphereGeometry(big ? 3.2 : 2, 16, 12), new THREE.MeshBasicMaterial({ color: s.kind === 'born' ? 0xffffff : GOLDc }));
+    m.position.copy(pos); globePath.add(m);
+    const h = new THREE.Sprite(new THREE.SpriteMaterial({ map: haloTex, color: GOLDc, transparent: true, opacity: big ? 0.7 : 0.4, depthWrite: false }));
+    h.scale.set(big ? 26 : 14, big ? 26 : 14, 1); h.position.copy(pos); globePath.add(h);
+    if (s.text) { const t = textSprite(s.text, { size: 18, color: '#e8c878' }); t.scale.multiplyScalar(0.6); t.position.copy(ll(s.lat, s.lon, GR + 16)); globePath.add(t); }
+  });
+  const name = textSprite(WEFT_PEOPLE[title].name, { size: 26, color: '#e8c878' }); name.scale.multiplyScalar(0.7);
+  name.position.copy(ll(stops[0].lat, stops[0].lon, GR + 30)); globePath.add(name);
+  // turn the planet to face the journey
+  const key = 'g:' + title + (L ? ':L' : '');
+  if (lifeState.gframed !== key) {
+    lifeState.gframed = key;
+    const c = new THREE.Vector3(); stops.forEach(s => c.add(ll(s.lat, s.lon, 1)));
+    if (c.lengthSq() < 1e-6) c.copy(ll(stops[0].lat, stops[0].lon, 1));
+    controls.autoRotate = false;
+    camera.position.copy(c.normalize().multiplyScalar(Math.max(GR * 2.6, camera.position.length())));
+  }
+}
+
+document.getElementById('modeBtn').addEventListener('click', () => setMode(mode === 'globe' ? 'loom' : 'globe'));
+
+// ── DATA ───────────────────────────────────────────────────────────────────────
+(async () => {
+  try {
+    const data = await WeftWho.loadAll();
+    CENTURIES = data.files.map(f => ({ name: f.name, from: f.from, to: f.to }));
+    T0 = Math.min(...CENTURIES.map(c => c.from), ...data.events.map(e => e.year));
+    DOMAINS = data.domains;
+    ALL_EVENTS = data.events;
+    ALL_EVENTS.forEach(e => {
+      (e.threads || []).forEach(t => {
+        if (!THREAD_MAP.has(e.id)) THREAD_MAP.set(e.id, new Set());
+        THREAD_MAP.get(e.id).add(t);
+        if (!THREAD_MAP.has(t)) THREAD_MAP.set(t, new Set());
+        THREAD_MAP.get(t).add(e.id);
+      });
+    });
+    WEFT_PEOPLE = data.people || {};
+    WEFT_PLACES = data.places || {};
+    WeftWho.init(data, {
+      onJump: id => { if (innerWidth < 700) WeftWho.close(); jumpTo(ALL_EVENTS.find(e => e.id === id)); },
+      onPerson: (t, L, evs) => { lifeState = { title: t, L, evs }; drawLife(); },
+      onClose: () => { lifeState = null; drawLife(); },
+      onGlobe: async ev => { await setMode('globe'); focusGlobe(ev); },
+    });
+    build();
+    makeEraButtons();
+    // a link can ask for a moment: ?year=1985
+    const askYear = parseFloat(new URLSearchParams(location.search).get('year'));
+    if (askYear) goTo(askYear + 0.5); else goNow();
+    loop();
+    document.getElementById('loading').classList.add('off');
+  } catch (err) {
+    console.error(err);
+    document.getElementById('loading').textContent = 'Could not load the timeline data';
+  }
+})();
 </script>
 </body>
 </html>

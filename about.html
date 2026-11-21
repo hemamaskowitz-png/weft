@@ -77,8 +77,8 @@
 <div class="top">
   <a class="brand" href="index.html">WEFT</a>
   <nav class="nav">
-    <a href="index.html">Timeline</a>
-    <a href="weft-3d.html" class="opt">3D loom</a>
+    <a href="index.html">The loom</a>
+    <a href="timeline.html" class="opt">2D timeline</a>
   </nav>
 </div>
 
@@ -117,8 +117,8 @@
 <section>
   <h2>How to read it</h2>
   <div class="how">
+    <div class="card"><span class="k">The loom</span><h3>The whole cloth</h3><p>All of time as one loom of stars: today at the front, the past stretching away behind. Drag to orbit, scroll to zoom, and use the sliders to move through time.</p></div>
     <div class="card"><span class="k">2D timeline</span><h3>A year at a time</h3><p>Every lane laid out across the months. Step year by year, or switch to a single strip on smaller screens.</p></div>
-    <div class="card"><span class="k">3D loom</span><h3>The whole cloth</h3><p>Decades as a cloud of stars. Drag to orbit, scroll to zoom, and use the sliders to move through time.</p></div>
     <div class="card"><span class="k">Globe</span><h3>Where it happened</h3><p>The same threads drawn as glowing arcs across a world map, lighting up as time passes.</p></div>
     <div class="card"><span class="k">Search</span><h3>Find anything</h3><p>Type a person, place or event, or a date: “1984”, “Sep 1973”, “11 September 1973”, “1985–1989”, or mix them: “Chile 1973”.</p></div>
   </div>
@@ -217,7 +217,15 @@
 })();
 
 // ── Live counts, straight from the data so they never go stale ──
-fetch('weft-data.json', { cache: 'no-cache' }).then(r => r.json()).then(d => {
+async function loadWeft() {
+  const get = u => fetch(u, { cache: 'no-cache' }).then(r => { if (!r.ok) throw new Error(u); return r.json(); });
+  const m = await get('data/manifest.json');
+  const parts = await Promise.all(m.files.map(f => get(f.file).catch(() => null)));
+  const d = { domains: m.domains, events: [], people: {}, places: {} };
+  parts.forEach(p => { if (!p) return; d.events.push(...p.events); Object.assign(d.people, p.people); Object.assign(d.places, p.places); });
+  return d;
+}
+loadWeft().then(d => {
   const ev = d.events;
   document.getElementById('nEv').textContent = ev.length;
   document.getElementById('nArt').textContent = ev.filter(e => e.art).length;

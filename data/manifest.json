@@ -1,0 +1,162 @@
+{
+ "about": "Weft data. Each century is its own file; to add one, add its file and a line below.",
+ "files": [
+  {
+   "name": "1400s",
+   "file": "data/1400s.json",
+   "from": 1400,
+   "to": 1499
+  },
+  {
+   "name": "1700s",
+   "file": "data/1700s.json",
+   "from": 1700,
+   "to": 1799
+  },
+  {
+   "name": "1800s",
+   "file": "data/1800s.json",
+   "from": 1800,
+   "to": 1899
+  },
+  {
+   "name": "1900s",
+   "file": "data/1900s.json",
+   "from": 1900,
+   "to": 1999
+  },
+  {
+   "name": "2000s",
+   "file": "data/2000s.json",
+   "from": 2000,
+   "to": 2099
+  }
+ ],
+ "domains": {
+  "politics": {
+   "label": "Politics & Governance",
+   "icon": "🏛️",
+   "color": "#e05c5c"
+  },
+  "conflict": {
+   "label": "Conflict & War",
+   "icon": "⚔️",
+   "color": "#e0873a"
+  },
+  "economics": {
+   "label": "Economics & Business",
+   "icon": "📈",
+   "color": "#d4af37"
+  },
+  "law": {
+   "label": "Law & Justice",
+   "icon": "⚖️",
+   "color": "#c8a05c"
+  },
+  "space": {
+   "label": "Space",
+   "icon": "🚀",
+   "color": "#8d6ae8"
+  },
+  "physics": {
+   "label": "Physics & Chemistry",
+   "icon": "⚛️",
+   "color": "#6f7de8"
+  },
+  "biology": {
+   "label": "Biology & Medicine",
+   "icon": "🧬",
+   "color": "#3fd9c4"
+  },
+  "earth": {
+   "label": "Earth Science",
+   "icon": "⛰️",
+   "color": "#b08954"
+  },
+  "disasters": {
+   "label": "Disasters & Crises",
+   "icon": "🌊",
+   "color": "#d1552f"
+  },
+  "tech": {
+   "label": "Technology",
+   "icon": "💻",
+   "color": "#7de87d"
+  },
+  "transport": {
+   "label": "Transport",
+   "icon": "🚄",
+   "color": "#3ab0b0"
+  },
+  "exploration": {
+   "label": "Exploration",
+   "icon": "🧭",
+   "color": "#5ca0e0"
+  },
+  "games": {
+   "label": "Games & Play",
+   "icon": "🎮",
+   "color": "#9fe84a"
+  },
+  "visualart": {
+   "label": "Visual Art",
+   "icon": "🎨",
+   "color": "#c87de8"
+  },
+  "theatre": {
+   "label": "Theatre & Performance",
+   "icon": "🎭",
+   "color": "#e85ca8"
+  },
+  "music": {
+   "label": "Music",
+   "icon": "🎵",
+   "color": "#e87db8"
+  },
+  "film": {
+   "label": "Film & Media",
+   "icon": "🎬",
+   "color": "#a078e8"
+  },
+  "literature": {
+   "label": "Literature",
+   "icon": "📖",
+   "color": "#e8a878"
+  },
+  "architecture": {
+   "label": "Architecture",
+   "icon": "🏗️",
+   "color": "#c0b060"
+  },
+  "fashion": {
+   "label": "Fashion",
+   "icon": "👗",
+   "color": "#f0a0c8"
+  },
+  "food": {
+   "label": "Food & Drink",
+   "icon": "🍲",
+   "color": "#e07a5c"
+  },
+  "religion": {
+   "label": "Religion & Belief",
+   "icon": "🕊️",
+   "color": "#d9d9e8"
+  },
+  "sport": {
+   "label": "Sport",
+   "icon": "🏅",
+   "color": "#78c8e8"
+  },
+  "people": {
+   "label": "People",
+   "icon": "👤",
+   "color": "#e8d87d"
+  },
+  "society": {
+   "label": "Society & Culture",
+   "icon": "🌍",
+   "color": "#78e8a0"
+  }
+ }
+}

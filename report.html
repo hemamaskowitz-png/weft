@@ -51,7 +51,7 @@
 <body>
 <div class="top">
   <a class="brand" href="index.html">WEFT</a>
-  <nav><a href="index.html">Timeline</a><a href="about.html">About</a></nav>
+  <nav><a href="index.html">The loom</a><a href="about.html">About</a></nav>
 </div>
 
 <main>
@@ -98,7 +98,7 @@
   <div class="done" id="done">
     <h2>Thank you</h2>
     <p>Your report is on its way. Every correction makes the cloth a little truer.</p>
-    <a href="index.html">Back to the timeline</a>
+    <a href="index.html">Back to Weft</a>
   </div>
 </main>
 
@@ -106,13 +106,21 @@
 // The Web3Forms access key. It only lets this form send to one inbox; it isn't a password.
 const ACCESS_KEY = '';
 
+async function loadWeft() {
+  const get = u => fetch(u, { cache: 'no-cache' }).then(r => { if (!r.ok) throw new Error(u); return r.json(); });
+  const m = await get('data/manifest.json');
+  const parts = await Promise.all(m.files.map(f => get(f.file).catch(() => null)));
+  const d = { domains: m.domains, events: [], people: {}, places: {} };
+  parts.forEach(p => { if (!p) return; d.events.push(...p.events); Object.assign(d.people, p.people); Object.assign(d.places, p.places); });
+  return d;
+}
 const $ = id => document.getElementById(id);
 const params = new URLSearchParams(location.search);
 const evId = parseInt(params.get('id'), 10);
 let ev = null;
 
 if (evId) {
-  fetch('weft-data.json', { cache: 'no-cache' }).then(r => r.json()).then(d => {
+  loadWeft().then(d => {
     ev = d.events.find(e => e.id === evId);
     if (!ev) return;
     const dom = d.domains[ev.domain] || {};
