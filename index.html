@@ -1249,7 +1249,7 @@ function goNow() {
 function goCentury(c) {
   const evs = ALL_EVENTS.filter(e => e.year >= c.from && e.year <= c.to);
   if (!evs.length) { goTo(c.from + 50, 20); return; }
-  const ts = evs.map(evT).sort((a, b) => a - b), mid = ts[Math.floor(ts.length / 2)];
+  const ts = evs.map(evT).sort((a, b) => a - b), mid = (ts[0] + ts[ts.length - 1]) / 2;  // middle of the span, so a busy decade doesn't pull the view
   goTo(mid, Math.max(8, Math.min(12, ts[ts.length - 1] - ts[0])));
 }
 function makeEraButtons() {
