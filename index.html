@@ -48,7 +48,7 @@
   .ct-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
   .ct-year { font-family: 'Space Mono', monospace; font-size: 0.55rem; color: var(--dim); }
   /* NAV SLIDERS — bottom right */
-  #nav { position: fixed; right: 1.2rem; bottom: 1rem; z-index: 6; display: flex; align-items: flex-end; gap: 0.5rem; }
+  #nav { position: fixed; right: 1.2rem; bottom: 1rem; z-index: 9; display: flex; align-items: flex-end; gap: 0.5rem; }
   .nav-time, .nav-zoom { background: rgba(19,29,46,0.78); border: 1px solid var(--border); border-radius: 14px; backdrop-filter: blur(6px); }
   .nav-time { display: flex; flex-direction: column; gap: 0.45rem; width: 320px; max-width: 60vw; padding: 0.7rem 1rem 0.85rem; }
   .nav-zoom { padding: 0.6rem 0.5rem; }
@@ -940,7 +940,7 @@ canvas.addEventListener('click', e => {
   tipXY = [e.clientX, e.clientY]; touchPick = e.pointerType === 'touch';
   updateHover(true);
   if (hovered) openCard(hovered.userData.ev);
-  else if (hoveredThread) openThread(...hoveredThread.userData.thread);
+  else if (hoveredThread) { const line = hoveredThread; openThread(...line.userData.thread); selectThread(line); }
 });
 let touchPick = false, hoverDirty = true;
 canvas.addEventListener('pointermove', () => { hoverDirty = true; touchPick = false; });
@@ -951,10 +951,34 @@ let hoveredThread = null, threadPrev = null;
 const GOLD_THREAD = new THREE.Color(0xe8c878), PLAIN_THREAD = new THREE.Color(0xcfd8ff);
 function setThreadHover(line) {
   if (line === hoveredThread) return;
-  if (hoveredThread) { hoveredThread.material.color.copy(PLAIN_THREAD); hoveredThread.material.opacity = threadPrev; }
+  // a thread that has been clicked keeps its highlight when the pointer moves away
+  if (hoveredThread && hoveredThread !== selectedThread) { hoveredThread.material.color.copy(PLAIN_THREAD); hoveredThread.material.opacity = threadPrev; }
   hoveredThread = line;
-  if (line) { threadPrev = line.material.opacity; line.material.color.copy(GOLD_THREAD); line.material.opacity = 1; }
+  if (line && line !== selectedThread) { threadPrev = line.material.opacity; line.material.color.copy(GOLD_THREAD); line.material.opacity = 1; }
 }
+
+// ── A clicked thread stays lit, with a glowing tube along it, for as long as its card is open ──
+let selectedThread = null, selectedGlow = null, selectedPrev = 0.5;
+function clearThreadSelection() {
+  if (!selectedThread) return;
+  if (selectedThread !== hoveredThread) { selectedThread.material.color.copy(PLAIN_THREAD); selectedThread.material.opacity = selectedPrev; }
+  if (selectedGlow) { selectedGlow.parent && selectedGlow.parent.remove(selectedGlow); selectedGlow.geometry.dispose(); selectedGlow.material.dispose(); selectedGlow = null; }
+  selectedThread = null;
+}
+function selectThread(line) {
+  clearThreadSelection();
+  if (!line) return;
+  selectedThread = line;
+  selectedPrev = line === hoveredThread ? threadPrev : line.material.opacity;
+  line.material.color.copy(GOLD_THREAD); line.material.opacity = 1;
+  const a = line.geometry.attributes.position, pts = [];
+  for (let i = 0; i < a.count; i++) pts.push(new THREE.Vector3(a.getX(i), a.getY(i), a.getZ(i)));
+  const onGlobe = globeArcs.includes(line);
+  selectedGlow = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), Math.max(32, pts.length * 2), onGlobe ? 0.7 : 1.4, 8, false),
+    new THREE.MeshBasicMaterial({ color: GOLD_THREAD, transparent: true, opacity: 0.55, depthWrite: false }));
+  line.parent.add(selectedGlow);
+}
+
 const yearOf = e => e.year < 0 ? `${-e.year} BC` : e.year;
 function updateHover(force) {
   if (!force && !hoverDirty) { placeTip(); return; }
@@ -1003,6 +1027,7 @@ function threadEnds(x, y) { return evKey3(x) <= evKey3(y) ? [x, y] : [y, x]; }
 // A thread's own card: what it joins, how far apart, and a way to either end
 function openThread(x, y) {
   if (!x || !y) return;
+  fitCard();
   const [a, b] = threadEnds(x, y);
   currentFocusId = null;
   document.getElementById('cDomIcon').textContent = '〰';
@@ -1035,8 +1060,30 @@ function openThread(x, y) {
 // ── CARD ───────────────────────────────────────────────────────────────────────
 const card = document.getElementById('card');
 document.getElementById('cardClose').addEventListener('click', () => { card.classList.remove('on'); currentFocusId = null; });
+// when the card closes, however it closes, the thread lets go
+new MutationObserver(() => { if (!card.classList.contains('on')) clearThreadSelection(); }).observe(card, { attributes: true, attributeFilter: ['class'] });
+// Keep the card clear of the time and zoom controls: it ends just above them, whatever the screen size.
+function fitCard() {
+  const navTop = document.getElementById('nav').getBoundingClientRect().top;
+  const hudBottom = document.getElementById('hud').getBoundingClientRect().bottom;
+  if (innerWidth <= 600) {
+    card.style.left = ''; card.style.right = '';
+    card.style.bottom = Math.round(innerHeight - navTop + 8) + 'px';
+    card.style.maxHeight = Math.max(160, Math.round(navTop - hudBottom - 16)) + 'px';
+  } else if (navTop - 82 < 240) {
+    // a short screen, like a phone on its side: no room above the controls, so the card moves to the left
+    card.style.bottom = ''; card.style.left = '1rem'; card.style.right = 'auto';
+    card.style.maxHeight = Math.round(innerHeight - 70 - 12) + 'px';
+  } else {
+    card.style.bottom = ''; card.style.left = ''; card.style.right = '';
+    card.style.maxHeight = Math.max(200, Math.round(navTop - 70 - 12)) + 'px';
+  }
+}
+addEventListener('resize', fitCard);
 function openCard(ev) {
+  clearThreadSelection();
   currentFocusId = ev.id;
+  fitCard();
   const d = DOMAINS[ev.domain];
   document.getElementById('cDomIcon').textContent = d.icon;
   const dl = document.getElementById('cDomLabel'); dl.textContent = d.label; dl.style.color = d.color;
@@ -1489,7 +1536,7 @@ function updateGlobeTime(force) {
   });
   globeArcs.forEach(l => {
     const lit = Math.abs(l.userData.ta - globeT) <= W || Math.abs(l.userData.tb - globeT) <= W;
-    l.material.opacity = lit ? 0.85 : 0.03;
+    if (l !== selectedThread && l !== hoveredThread) l.material.opacity = lit ? 0.85 : 0.03;
   });
   // name the events lit right now (nearest in time first)
   disposeGroup(globeLabels);
@@ -1524,7 +1571,7 @@ async function setMode(m) {
   }
   document.getElementById('modeBtn').innerHTML = mode === 'globe' ? '&#8801; Loom' : '&#9711; Globe';
   if (hovered) { hovered = null; tip.classList.remove('on'); }
-  setThreadHover(null); hoverDirty = true;
+  setThreadHover(null); clearThreadSelection(); hoverDirty = true;
   drawLife();
 }
 controls.addEventListener('start', () => { controls.autoRotate = false; });
