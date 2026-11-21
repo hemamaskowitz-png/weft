@@ -303,6 +303,7 @@
       <div class="modal-date" id="modalDate"></div>
       <div class="modal-text" id="modalText"></div>
       <div class="modal-links" id="modalLinks"></div>
+      <div class="src-row" id="modalSources"></div>
       <div class="resp-row" id="modalResp"></div>
       <div class="modal-threads" id="modalThreads"></div>
       <div class="who-row" id="modalWho"></div>
@@ -381,6 +382,16 @@
   .ws-row .y { font-family: 'Space Mono', monospace; font-size: 0.6rem; color: #5a6a80; flex-shrink: 0; }
   @media (max-width: 599px) { .ws-wrap { order: 3; flex: 1 1 100%; max-width: none; } .ws-list { width: 100%; max-height: 62vh; } }
   .ws-row.art .d { outline: 1.5px solid rgba(255,255,255,0.85); outline-offset: 1.5px; }
+
+  /* Read more — reporting from the time, documents and histories */
+  .src-row { margin-top: 0.9rem; }
+  .src-row:empty { display: none; }
+  .src-label { font-family: 'Space Mono', monospace; font-size: 0.55rem; letter-spacing: 0.12em; text-transform: uppercase; color: #5a6a80; margin-bottom: 0.35rem; }
+  .src-item { display: block; text-decoration: none; padding: 0.4rem 0.55rem; margin-bottom: 0.3rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); transition: border-color 0.15s, background 0.15s; }
+  .src-item:hover { border-color: rgba(232,200,120,0.5); background: rgba(232,200,120,0.06); }
+  .src-item .st { display: block; font-family: 'Space Grotesk', system-ui, sans-serif; font-size: 0.72rem; color: #c8d4e8; line-height: 1.35; }
+  .src-item .sp { display: block; font-family: 'Space Mono', monospace; font-size: 0.55rem; color: #8a9ab8; margin-top: 0.15rem; }
+  .src-item .sk { color: #e8c878; }
 </style>
 <div id="whoPanel" role="dialog" aria-label="Person or place"><button class="wp-close" aria-label="Close">&#10005;</button><div id="whoBody"></div></div>
 <script>
@@ -783,7 +794,25 @@ window.WeftWho = (() => {
     return out;
   }
 
-  return { loadAll, search, mountSearch, init, renderChips, openPerson, openPlace, close, life, fmtDate, fmtPlace, image, world, fmtEvDate, renderResponses, responseIds };
+  // ── Read more: links chosen for the biggest turning points ──
+  const SRC_KIND = { then: 'At the time', document: 'Primary source', history: 'Looking back' };
+  function renderSources(el, ev) {
+    if (!el) return;
+    el.innerHTML = '';
+    const list = (ev && ev.sources) || [];
+    if (!list.length) return;
+    const lab = document.createElement('div'); lab.className = 'src-label'; lab.textContent = 'Read more'; el.appendChild(lab);
+    list.forEach(s => {
+      const a = document.createElement('a'); a.className = 'src-item'; a.href = s.url; a.target = '_blank'; a.rel = 'noopener';
+      const t = document.createElement('span'); t.className = 'st'; t.textContent = s.title;
+      const m = document.createElement('span'); m.className = 'sp';
+      const k = document.createElement('span'); k.className = 'sk'; k.textContent = SRC_KIND[s.kind] || 'Source';
+      m.append(k, ' \u00b7 ' + s.publisher + ' \u2197');
+      a.append(t, m); el.appendChild(a);
+    });
+  }
+
+  return { renderSources, loadAll, search, mountSearch, init, renderChips, openPerson, openPlace, close, life, fmtDate, fmtPlace, image, world, fmtEvDate, renderResponses, responseIds };
 })();
 </script>
 <!--/WEFT-WHO-->
@@ -1222,6 +1251,7 @@ function renderModal() {
     a.className = 'modal-link'; a.textContent = /wikipedia\.org/.test(ev.wiki) ? '→ Wikipedia' : '→ Read more';
     a.style.borderColor = d.color + '44'; a.style.color = d.color; linksEl.appendChild(a);
   }
+  WeftWho.renderSources(document.getElementById('modalSources'), ev);
   const rep = document.createElement('a'); rep.className = 'report-link'; rep.href = 'report.html?id=' + ev.id; rep.target = '_blank'; rep.rel = 'noopener'; rep.textContent = 'Report an error'; linksEl.appendChild(rep);
   // Threads — connected events, both directions, in date order
   const thEl = document.getElementById('modalThreads'); thEl.innerHTML = '';
