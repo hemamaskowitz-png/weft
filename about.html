@@ -114,12 +114,25 @@
   <p>The <em>who</em> in history matters as much as the <em>when</em> and <em>why</em>. Every event names the people involved and where it happened. Tap a person to see when and where they were born and died, and to follow their lifeline through the events they appear in. Tap a place to find it on the globe and see what else happened there.</p>
 </section>
 
+<section id="regions">
+  <h2>Regions</h2>
+  <p>You can look at Weft one part of the world at a time. Choose a region, and its events stay bright while the rest of the world fades back. The threads that lead out of it stay visible, because no region’s history happened on its own.</p>
+  <ul class="list">
+    <li><b>Whose map</b><small>Weft groups places using the United Nations’ standard regions, known as <a href="https://unstats.un.org/unsd/methodology/m49" target="_blank" rel="noopener">M49</a>: five continents divided into 22 sub-regions. The UN says these groupings are for statistical convenience and imply no political position, and Weft uses them in the same spirit.</small></li>
+    <li><b>The names</b><small>Weft says “Western Asia” and “Eastern Asia” rather than “Middle East” and “Far East”. The older names describe places by their distance from Europe; the newer ones describe where they are.</small></li>
+    <li><b>Today’s borders</b><small>Places are filed under the countries that exist now, so Waterloo is in Belgium and 19th-century Basutoland is in Lesotho. Some placements follow the UN rather than habit: Iran is in Southern Asia, Egypt and Sudan are in Northern Africa, and Türkiye and Cyprus are in Western Asia. Hawaii is counted with the United States, though events from the time of the Hawaiian Kingdom also appear under Polynesia.</small></li>
+    <li><b>More than one place</b><small>Some events belong to more than one region — indentured labourers sailing from India to Natal, say — and appear under each. Events at sea or in space belong to none.</small></li>
+    <li><b>Not a quota</b><small>Weft doesn’t try to give every region the same number of events. Some places and decades were quieter than others, and the powers of the day really did dominate the record. The aim is that nothing important is left out. If you find a gap, please <a href="report.html">tell us</a>.</small></li>
+  </ul>
+</section>
+
 <section>
   <h2>How to read it</h2>
   <div class="how">
     <div class="card"><span class="k">The loom</span><h3>The whole cloth</h3><p>All of time as one loom of stars: today at the front, the past stretching away behind. Drag to orbit, scroll to zoom, and use the sliders to move through time.</p></div>
     <div class="card"><span class="k">2D timeline</span><h3>A year at a time</h3><p>Every lane laid out across the months. Step year by year, or switch to a single strip on smaller screens.</p></div>
     <div class="card"><span class="k">Globe</span><h3>Where it happened</h3><p>The same threads drawn as glowing arcs across a world map, lighting up as time passes.</p></div>
+    <div class="card"><span class="k">Regions</span><h3>One part of the world</h3><p>Pick a continent or region from the menu at the top. Its events stay lit, everything else fades, and the choice follows you between the loom, the globe and the 2D timeline.</p></div>
     <div class="card"><span class="k">Search</span><h3>Find anything</h3><p>Type a person, place or event, or a date: “1984”, “Sep 1973”, “11 September 1973”, “1985–1989”, or mix them: “Chile 1973”.</p></div>
   </div>
 </section>
@@ -132,7 +145,7 @@
     <div class="stat"><b id="nPp">—</b><span>people</span></div>
     <div class="stat"><b id="nPl">—</b><span>places</span></div>
   </div>
-  <p>Weft currently covers <span id="eras">1492, 1776, 1914 and 1970–1999</span>, across <span id="nLanes">25</span> lanes:</p>
+  <p>Weft currently covers <span id="eras">1800 to today</span>, across <span id="nLanes">25</span> lanes:</p>
   <div class="lanes" id="lanes"></div>
   <p class="note">It’s a work in progress, and the gaps are real. The aim is the whole world, not one country’s version of it.</p>
 </section>
@@ -236,11 +249,9 @@ loadWeft().then(d => {
   document.getElementById('nLanes').textContent = doms.length;
   const box = document.getElementById('lanes');
   doms.forEach(x => { const s = document.createElement('span'); s.className = 'lane'; s.innerHTML = `<i style="background:${x.color}"></i>`; s.append(x.label); box.appendChild(s); });
-  // eras: runs of consecutive years
-  const ys = [...new Set(ev.map(e => e.year))].sort((a, b) => a - b), runs = [];
-  ys.forEach(y => { const r = runs[runs.length - 1]; if (r && y === r[1] + 1) r[1] = y; else runs.push([y, y]); });
-  const txt = runs.map(([a, b]) => a === b ? String(a) : `${a}–${b}`);
-  document.getElementById('eras').textContent = txt.length > 1 ? txt.slice(0, -1).join(', ') + ' and ' + txt[txt.length - 1] : txt[0];
+  // span: from the earliest event to the latest (a year with no events is a quiet year, not a gap in coverage)
+  const ys = ev.map(e => e.year), y0 = Math.min(...ys), y1 = Math.max(...ys);
+  document.getElementById('eras').textContent = y1 >= new Date().getFullYear() - 1 ? `${y0} to today` : `${y0} to ${y1}`;
 }).catch(() => {});
 </script>
 </body>
