@@ -2,6 +2,12 @@
  "about": "Weft data. Each century is its own file; to add one, add its file and a line under \"files\". Files listed under \"hidden\" are kept but not shown.",
  "files": [
   {
+   "name": "1800s",
+   "file": "data/1800s.json",
+   "from": 1800,
+   "to": 1899
+  },
+  {
    "name": "1900s",
    "file": "data/1900s.json",
    "from": 1900,
@@ -143,12 +149,6 @@
  },
  "hidden": [
   {
-   "name": "1800s",
-   "file": "data/1800s.json",
-   "from": 1800,
-   "to": 1899
-  },
-  {
    "name": "1400s",
    "file": "data/1400s.json",
    "from": 1400,
@@ -160,5 +160,628 @@
    "from": 1700,
    "to": 1799
   }
- ]
+ ],
+ "regions": [
+  {
+   "key": "africa",
+   "label": "Africa",
+   "subs": [
+    {
+     "key": "northern-africa",
+     "label": "Northern Africa"
+    },
+    {
+     "key": "eastern-africa",
+     "label": "Eastern Africa"
+    },
+    {
+     "key": "middle-africa",
+     "label": "Middle Africa"
+    },
+    {
+     "key": "southern-africa",
+     "label": "Southern Africa"
+    },
+    {
+     "key": "western-africa",
+     "label": "Western Africa"
+    }
+   ]
+  },
+  {
+   "key": "americas",
+   "label": "Americas",
+   "subs": [
+    {
+     "key": "northern-america",
+     "label": "Northern America"
+    },
+    {
+     "key": "central-america",
+     "label": "Central America"
+    },
+    {
+     "key": "caribbean",
+     "label": "Caribbean"
+    },
+    {
+     "key": "south-america",
+     "label": "South America"
+    }
+   ]
+  },
+  {
+   "key": "asia",
+   "label": "Asia",
+   "subs": [
+    {
+     "key": "central-asia",
+     "label": "Central Asia"
+    },
+    {
+     "key": "eastern-asia",
+     "label": "Eastern Asia"
+    },
+    {
+     "key": "south-eastern-asia",
+     "label": "South-eastern Asia"
+    },
+    {
+     "key": "southern-asia",
+     "label": "Southern Asia"
+    },
+    {
+     "key": "western-asia",
+     "label": "Western Asia"
+    }
+   ]
+  },
+  {
+   "key": "europe",
+   "label": "Europe",
+   "subs": [
+    {
+     "key": "eastern-europe",
+     "label": "Eastern Europe"
+    },
+    {
+     "key": "northern-europe",
+     "label": "Northern Europe"
+    },
+    {
+     "key": "southern-europe",
+     "label": "Southern Europe"
+    },
+    {
+     "key": "western-europe",
+     "label": "Western Europe"
+    }
+   ]
+  },
+  {
+   "key": "oceania",
+   "label": "Oceania",
+   "subs": [
+    {
+     "key": "australia-nz",
+     "label": "Australia and New Zealand"
+    },
+    {
+     "key": "melanesia",
+     "label": "Melanesia"
+    },
+    {
+     "key": "micronesia",
+     "label": "Micronesia"
+    },
+    {
+     "key": "polynesia",
+     "label": "Polynesia"
+    }
+   ]
+  }
+ ],
+ "countryRegions": {
+  "Afghanistan": [
+   "southern-asia"
+  ],
+  "Algeria": [
+   "northern-africa"
+  ],
+  "Angola": [
+   "middle-africa"
+  ],
+  "Argentina": [
+   "south-america"
+  ],
+  "Australia": [
+   "australia-nz"
+  ],
+  "Austria": [
+   "western-europe"
+  ],
+  "Bahamas": [
+   "caribbean"
+  ],
+  "Bangladesh": [
+   "southern-asia"
+  ],
+  "Barbados": [
+   "caribbean"
+  ],
+  "Belgium": [
+   "western-europe"
+  ],
+  "Bolivia": [
+   "south-america"
+  ],
+  "Bosnia and Herzegovina": [
+   "southern-europe"
+  ],
+  "Brazil": [
+   "south-america"
+  ],
+  "Burkina Faso": [
+   "western-africa"
+  ],
+  "Cambodia": [
+   "south-eastern-asia"
+  ],
+  "Cameroon": [
+   "middle-africa"
+  ],
+  "Canada": [
+   "northern-america"
+  ],
+  "Central African Republic": [
+   "middle-africa"
+  ],
+  "Chad": [
+   "middle-africa"
+  ],
+  "Chile": [
+   "south-america"
+  ],
+  "China": [
+   "eastern-asia"
+  ],
+  "Colombia": [
+   "south-america"
+  ],
+  "Costa Rica": [
+   "central-america"
+  ],
+  "Crimea": [
+   "eastern-europe"
+  ],
+  "Croatia": [
+   "southern-europe"
+  ],
+  "Cuba": [
+   "caribbean"
+  ],
+  "Czech Republic": [
+   "eastern-europe"
+  ],
+  "Côte d'Ivoire": [
+   "western-africa"
+  ],
+  "DR Congo": [
+   "middle-africa"
+  ],
+  "Denmark": [
+   "northern-europe"
+  ],
+  "Dominican Republic": [
+   "caribbean"
+  ],
+  "East Timor": [
+   "south-eastern-asia"
+  ],
+  "Ecuador": [
+   "south-america"
+  ],
+  "Egypt": [
+   "northern-africa"
+  ],
+  "Egypt / Syria": [
+   "northern-africa",
+   "western-asia"
+  ],
+  "El Salvador": [
+   "central-america"
+  ],
+  "Ethiopia": [
+   "eastern-africa"
+  ],
+  "Falkland Islands": [
+   "south-america"
+  ],
+  "Fiji": [
+   "melanesia"
+  ],
+  "Finland": [
+   "northern-europe"
+  ],
+  "France": [
+   "western-europe"
+  ],
+  "French Guiana": [
+   "south-america"
+  ],
+  "French Polynesia": [
+   "polynesia"
+  ],
+  "Gabon": [
+   "middle-africa"
+  ],
+  "Georgia": [
+   "western-asia"
+  ],
+  "Germany": [
+   "western-europe"
+  ],
+  "Ghana": [
+   "western-africa"
+  ],
+  "Greece": [
+   "southern-europe"
+  ],
+  "Grenada": [
+   "caribbean"
+  ],
+  "Guatemala": [
+   "central-america"
+  ],
+  "Guernsey": [
+   "northern-europe"
+  ],
+  "Guinea": [
+   "western-africa"
+  ],
+  "Guyana": [
+   "south-america"
+  ],
+  "Haiti": [
+   "caribbean"
+  ],
+  "Honduras": [
+   "central-america"
+  ],
+  "Hungary": [
+   "eastern-europe"
+  ],
+  "Iceland": [
+   "northern-europe"
+  ],
+  "India": [
+   "southern-asia"
+  ],
+  "Indonesia": [
+   "south-eastern-asia"
+  ],
+  "Iran": [
+   "southern-asia"
+  ],
+  "Iraq": [
+   "western-asia"
+  ],
+  "Ireland": [
+   "northern-europe"
+  ],
+  "Israel": [
+   "western-asia"
+  ],
+  "Italy": [
+   "southern-europe"
+  ],
+  "Italy / Austria border": [
+   "southern-europe",
+   "western-europe"
+  ],
+  "Jamaica": [
+   "caribbean"
+  ],
+  "Japan": [
+   "eastern-asia"
+  ],
+  "Kazakhstan": [
+   "central-asia"
+  ],
+  "Kenya": [
+   "eastern-africa"
+  ],
+  "Kiribati": [
+   "micronesia"
+  ],
+  "Korea": [
+   "eastern-asia"
+  ],
+  "Kosovo": [
+   "southern-europe"
+  ],
+  "Kuwait": [
+   "western-asia"
+  ],
+  "Kyrgyzstan": [
+   "central-asia"
+  ],
+  "Lebanon": [
+   "western-asia"
+  ],
+  "Lesotho": [
+   "southern-africa"
+  ],
+  "Liberia": [
+   "western-africa"
+  ],
+  "Libya": [
+   "northern-africa"
+  ],
+  "Lithuania": [
+   "northern-europe"
+  ],
+  "Madagascar": [
+   "eastern-africa"
+  ],
+  "Malaysia": [
+   "south-eastern-asia"
+  ],
+  "Mali": [
+   "western-africa"
+  ],
+  "Marshall Islands": [
+   "micronesia"
+  ],
+  "Martinique": [
+   "caribbean"
+  ],
+  "Mexico": [
+   "central-america"
+  ],
+  "Monaco": [
+   "western-europe"
+  ],
+  "Montenegro": [
+   "southern-europe"
+  ],
+  "Morocco": [
+   "northern-africa"
+  ],
+  "Mozambique": [
+   "eastern-africa"
+  ],
+  "Myanmar": [
+   "south-eastern-asia"
+  ],
+  "Namibia": [
+   "southern-africa"
+  ],
+  "Nepal": [
+   "southern-asia"
+  ],
+  "Netherlands": [
+   "western-europe"
+  ],
+  "New Zealand": [
+   "australia-nz"
+  ],
+  "Nicaragua": [
+   "central-america"
+  ],
+  "Niger": [
+   "western-africa"
+  ],
+  "Nigeria": [
+   "western-africa"
+  ],
+  "North Korea": [
+   "eastern-asia"
+  ],
+  "Northern Mariana Islands": [
+   "micronesia"
+  ],
+  "Norway": [
+   "northern-europe"
+  ],
+  "Pakistan": [
+   "southern-asia"
+  ],
+  "Palestine": [
+   "western-asia"
+  ],
+  "Panama": [
+   "central-america"
+  ],
+  "Papua New Guinea": [
+   "melanesia"
+  ],
+  "Paraguay": [
+   "south-america"
+  ],
+  "Peru": [
+   "south-america"
+  ],
+  "Philippines": [
+   "south-eastern-asia"
+  ],
+  "Poland": [
+   "eastern-europe"
+  ],
+  "Portugal": [
+   "southern-europe"
+  ],
+  "Puerto Rico": [
+   "caribbean"
+  ],
+  "Qatar": [
+   "western-asia"
+  ],
+  "Romania": [
+   "eastern-europe"
+  ],
+  "Russia": [
+   "eastern-europe"
+  ],
+  "Rwanda": [
+   "eastern-africa"
+  ],
+  "Samoa": [
+   "polynesia"
+  ],
+  "Saudi Arabia": [
+   "western-asia"
+  ],
+  "Senegal": [
+   "western-africa"
+  ],
+  "Serbia": [
+   "southern-europe"
+  ],
+  "Sierra Leone": [
+   "western-africa"
+  ],
+  "Singapore": [
+   "south-eastern-asia"
+  ],
+  "Slovenia": [
+   "southern-europe"
+  ],
+  "Solomon Islands": [
+   "melanesia"
+  ],
+  "Somalia": [
+   "eastern-africa"
+  ],
+  "South Africa": [
+   "southern-africa"
+  ],
+  "South Korea": [
+   "eastern-asia"
+  ],
+  "South Sudan": [
+   "eastern-africa"
+  ],
+  "Spain": [
+   "southern-europe"
+  ],
+  "Sri Lanka": [
+   "southern-asia"
+  ],
+  "St Helena": [
+   "western-africa"
+  ],
+  "Sudan": [
+   "northern-africa"
+  ],
+  "Sweden": [
+   "northern-europe"
+  ],
+  "Switzerland": [
+   "western-europe"
+  ],
+  "Syria": [
+   "western-asia"
+  ],
+  "São Tomé and Príncipe": [
+   "middle-africa"
+  ],
+  "Taiwan": [
+   "eastern-asia"
+  ],
+  "Tanzania": [
+   "eastern-africa"
+  ],
+  "Thailand": [
+   "south-eastern-asia"
+  ],
+  "Tonga": [
+   "polynesia"
+  ],
+  "Trinidad and Tobago": [
+   "caribbean"
+  ],
+  "Tunisia": [
+   "northern-africa"
+  ],
+  "Turkey": [
+   "western-asia"
+  ],
+  "Turkmenistan": [
+   "central-asia"
+  ],
+  "Uganda": [
+   "eastern-africa"
+  ],
+  "Ukraine": [
+   "eastern-europe"
+  ],
+  "United Arab Emirates": [
+   "western-asia"
+  ],
+  "United Kingdom": [
+   "northern-europe"
+  ],
+  "United States": [
+   "northern-america"
+  ],
+  "Uruguay": [
+   "south-america"
+  ],
+  "Uzbekistan": [
+   "central-asia"
+  ],
+  "Vanuatu": [
+   "melanesia"
+  ],
+  "Vatican City": [
+   "southern-europe"
+  ],
+  "Venezuela": [
+   "south-america"
+  ],
+  "Vietnam": [
+   "south-eastern-asia"
+  ],
+  "West Bank": [
+   "western-asia"
+  ],
+  "Zambia": [
+   "eastern-africa"
+  ],
+  "Zambia/Zimbabwe": [
+   "eastern-africa"
+  ],
+  "Zimbabwe": [
+   "eastern-africa"
+  ]
+ },
+ "placeRegions": {
+  "southatlantic": [
+   "south-america"
+  ],
+  "gulf": [
+   "western-asia"
+  ],
+  "hormuz": [
+   "western-asia"
+  ],
+  "balticsea": [
+   "northern-europe"
+  ],
+  "tsushima": [
+   "eastern-asia"
+  ],
+  "aksaichin": [
+   "southern-asia",
+   "eastern-asia"
+  ],
+  "gom": [
+   "northern-america",
+   "central-america"
+  ],
+  "jerusalem": [
+   "western-asia"
+  ]
+ }
 }
