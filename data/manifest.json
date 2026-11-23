@@ -2,6 +2,12 @@
  "about": "Weft data. Each century is its own file; to add one, add its file and a line under \"files\". Files listed under \"hidden\" are kept but not shown.",
  "files": [
   {
+   "name": "1700s",
+   "file": "data/1700s.json",
+   "from": 1700,
+   "to": 1799
+  },
+  {
    "name": "1800s",
    "file": "data/1800s.json",
    "from": 1800,
@@ -153,12 +159,6 @@
    "file": "data/1400s.json",
    "from": 1400,
    "to": 1499
-  },
-  {
-   "name": "1700s",
-   "file": "data/1700s.json",
-   "from": 1700,
-   "to": 1799
   }
  ],
  "regions": [
@@ -312,6 +312,9 @@
   "Belgium": [
    "western-europe"
   ],
+  "Benin": [
+   "western-africa"
+  ],
   "Bolivia": [
    "south-america"
   ],
@@ -320,6 +323,9 @@
   ],
   "Brazil": [
    "south-america"
+  ],
+  "Bulgaria": [
+   "eastern-europe"
   ],
   "Burkina Faso": [
    "western-africa"
@@ -536,6 +542,9 @@
   "Martinique": [
    "caribbean"
   ],
+  "Mauritius": [
+   "eastern-africa"
+  ],
   "Mexico": [
    "central-america"
   ],
@@ -709,6 +718,9 @@
   ],
   "Turkmenistan": [
    "central-asia"
+  ],
+  "US Virgin Islands": [
+   "caribbean"
   ],
   "Uganda": [
    "eastern-africa"
