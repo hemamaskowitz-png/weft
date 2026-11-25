@@ -1,0 +1,508 @@
+{
+"holidays": [
+{
+"id": "za-newyear",
+"name": "New Year's Day",
+"country": "South Africa",
+"date": "1 January",
+"month": 1,
+"day": 1,
+"type": "public holiday",
+"note": "Its origins are older than 1700, where Weft's timeline begins.",
+"events": [],
+"origin": null
+},
+{
+"id": "za-humanrights",
+"name": "Human Rights Day",
+"country": "South Africa",
+"date": "21 March",
+"month": 3,
+"day": 21,
+"type": "public holiday",
+"note": "Marks the Sharpeville massacre of 1960, when police killed 69 people protesting against the pass laws. The constitution was signed at Sharpeville in 1996.",
+"events": [
+5246,
+6504,
+2216
+],
+"origin": 5246
+},
+{
+"id": "za-goodfriday",
+"name": "Good Friday",
+"country": "South Africa",
+"date": "The Friday before Easter",
+"month": null,
+"day": null,
+"type": "public holiday",
+"note": "A Christian holy day. Its origins are older than 1700, where Weft's timeline begins.",
+"events": [],
+"origin": null
+},
+{
+"id": "za-family",
+"name": "Family Day",
+"country": "South Africa",
+"date": "The Monday after Easter",
+"month": null,
+"day": null,
+"type": "public holiday",
+"note": "Easter Monday, renamed Family Day in the 1994 holidays law.",
+"events": [
+6504
+],
+"origin": 6504
+},
+{
+"id": "za-freedom",
+"name": "Freedom Day",
+"country": "South Africa",
+"date": "27 April",
+"month": 4,
+"day": 27,
+"type": "public holiday",
+"note": "Marks the first election in which all South Africans could vote, on 27 April 1994.",
+"events": [
+2185,
+6504
+],
+"origin": 2185
+},
+{
+"id": "za-workers",
+"name": "Workers' Day",
+"country": "South Africa",
+"date": "1 May",
+"month": 5,
+"day": 1,
+"type": "public holiday",
+"note": "International May Day, recognised as a public holiday in South Africa from 1995.",
+"events": [
+10185,
+10196,
+6504
+],
+"origin": 10185
+},
+{
+"id": "za-youth",
+"name": "Youth Day",
+"country": "South Africa",
+"date": "16 June",
+"month": 6,
+"day": 16,
+"type": "public holiday",
+"note": "Marks the Soweto uprising of 1976, when police fired on schoolchildren protesting against being taught in Afrikaans.",
+"events": [
+2088,
+6504
+],
+"origin": 2088
+},
+{
+"id": "za-women",
+"name": "National Women's Day",
+"country": "South Africa",
+"date": "9 August",
+"month": 8,
+"day": 9,
+"type": "public holiday",
+"note": "Marks the march of about 20,000 women to the Union Buildings in 1956 against pass laws for women.",
+"events": [
+5228,
+6504
+],
+"origin": 5228
+},
+{
+"id": "za-heritage",
+"name": "Heritage Day",
+"country": "South Africa",
+"date": "24 September",
+"month": 9,
+"day": 24,
+"type": "public holiday",
+"note": "Kept in KwaZulu-Natal as Shaka Day, the date traditionally given for King Shaka's death. It became Heritage Day, for all South Africans' cultures, in 1995. Many people now mark it with a braai.",
+"events": [
+10055,
+6504,
+6505
+],
+"origin": 10055
+},
+{
+"id": "za-reconciliation",
+"name": "Day of Reconciliation",
+"country": "South Africa",
+"date": "16 December",
+"month": 12,
+"day": 16,
+"type": "public holiday",
+"note": "16 December carries two histories. Afrikaner nationalists kept it as Dingane's Day and later the Day of the Covenant (or Vow), remembering Blood River in 1838. In 1961 the ANC's armed wing chose the same date to launch its struggle. Since 1995 it has been a day to hold both, and to work towards reconciliation.",
+"events": [
+10072,
+5255,
+6504
+],
+"origin": 10072
+},
+{
+"id": "za-christmas",
+"name": "Christmas Day",
+"country": "South Africa",
+"date": "25 December",
+"month": 12,
+"day": 25,
+"type": "public holiday",
+"note": "A Christian holy day. Its origins are older than 1700, where Weft's timeline begins.",
+"events": [],
+"origin": null
+},
+{
+"id": "za-goodwill",
+"name": "Day of Goodwill",
+"country": "South Africa",
+"date": "26 December",
+"month": 12,
+"day": 26,
+"type": "public holiday",
+"note": "Boxing Day, renamed the Day of Goodwill in the 1994 holidays law.",
+"events": [
+6504
+],
+"origin": 6504
+},
+{
+"id": "uk-newyear",
+"name": "New Year's Day",
+"country": "United Kingdom",
+"date": "1 January",
+"month": 1,
+"day": 1,
+"type": "public holiday",
+"note": "A bank holiday in Scotland since 1871, and in England, Wales and Northern Ireland since 1974. Its origins are older than 1700, where Weft's timeline begins.",
+"events": [
+11505
+],
+"origin": 11505
+},
+{
+"id": "uk-goodfriday",
+"name": "Good Friday",
+"country": "United Kingdom",
+"date": "The Friday before Easter",
+"month": null,
+"day": null,
+"type": "public holiday",
+"note": "A traditional holiday in England, Wales and Northern Ireland, and a bank holiday in Scotland since 1871. Its origins are older than 1700, where Weft's timeline begins.",
+"events": [],
+"origin": null
+},
+{
+"id": "uk-eastermonday",
+"name": "Easter Monday",
+"country": "United Kingdom",
+"date": "The Monday after Easter",
+"month": null,
+"day": null,
+"type": "public holiday",
+"note": "One of the first bank holidays, in 1871 (not in Scotland).",
+"events": [
+11505
+],
+"origin": 11505
+},
+{
+"id": "uk-earlymay",
+"name": "Early May Bank Holiday",
+"country": "United Kingdom",
+"date": "The first Monday in May",
+"month": null,
+"day": null,
+"type": "public holiday",
+"note": "Scotland has had a holiday on the first Monday in May since 1871. England, Wales and Northern Ireland followed in 1978, linked to international May Day.",
+"events": [
+10185,
+10196,
+11505,
+6502
+],
+"origin": 10196
+},
+{
+"id": "uk-spring",
+"name": "Spring Bank Holiday",
+"country": "United Kingdom",
+"date": "The last Monday in May",
+"month": null,
+"day": null,
+"type": "public holiday",
+"note": "Replaced Whit Monday, one of the original 1871 bank holidays, from 1971.",
+"events": [
+11505
+],
+"origin": 11505
+},
+{
+"id": "uk-summer",
+"name": "Summer Bank Holiday",
+"country": "United Kingdom",
+"date": "The last Monday in August (first Monday in Scotland)",
+"month": null,
+"day": null,
+"type": "public holiday",
+"note": "The 1871 act set it on the first Monday in August. England, Wales and Northern Ireland moved it to the last Monday from 1971.",
+"events": [
+11505
+],
+"origin": 11505
+},
+{
+"id": "uk-christmas",
+"name": "Christmas Day",
+"country": "United Kingdom",
+"date": "25 December",
+"month": 12,
+"day": 25,
+"type": "public holiday",
+"note": "A Christian holy day and traditional holiday. Its origins are older than 1700, where Weft's timeline begins.",
+"events": [],
+"origin": null
+},
+{
+"id": "uk-boxing",
+"name": "Boxing Day",
+"country": "United Kingdom",
+"date": "26 December",
+"month": 12,
+"day": 26,
+"type": "public holiday",
+"note": "A bank holiday in England, Wales and Ireland since 1871.",
+"events": [
+11505
+],
+"origin": 11505
+},
+{
+"id": "uk-standrew",
+"name": "St Andrew's Day (Scotland)",
+"country": "United Kingdom",
+"date": "30 November",
+"month": 11,
+"day": 30,
+"type": "public holiday",
+"note": "Scotland's patron saint's day, made a bank holiday by the Scottish Parliament in 2007. Its origins are older than 1700, where Weft's timeline begins.",
+"events": [],
+"origin": null
+},
+{
+"id": "uk-stpatrick",
+"name": "St Patrick's Day (Northern Ireland)",
+"country": "United Kingdom",
+"date": "17 March",
+"month": 3,
+"day": 17,
+"type": "public holiday",
+"note": "Ireland's patron saint's day, a bank holiday since 1903. Its origins are older than 1700, where Weft's timeline begins.",
+"events": [],
+"origin": null
+},
+{
+"id": "uk-boyne",
+"name": "Battle of the Boyne (Northern Ireland)",
+"country": "United Kingdom",
+"date": "12 July",
+"month": 7,
+"day": 12,
+"type": "public holiday",
+"note": "Also called Orangemen's Day. Marks William III's victory over James II in 1690 — a date that still divides communities in Northern Ireland. Its origins are older than 1700, where Weft's timeline begins.",
+"events": [],
+"origin": null
+},
+{
+"id": "uk-remembrance",
+"name": "Remembrance Sunday",
+"country": "United Kingdom",
+"date": "The second Sunday in November",
+"month": null,
+"day": null,
+"type": "observance",
+"note": "Not a bank holiday. Remembers the dead of the world wars and later conflicts, with two minutes of silence — also kept at 11 a.m. on 11 November, the hour the First World War ended.",
+"events": [
+5050
+],
+"origin": 5050
+},
+{
+"id": "us-newyear",
+"name": "New Year's Day",
+"country": "United States",
+"date": "1 January",
+"month": 1,
+"day": 1,
+"type": "public holiday",
+"note": "One of the four original federal holidays of 1870. Its origins are older than 1700, where Weft's timeline begins.",
+"events": [
+11504
+],
+"origin": 11504
+},
+{
+"id": "us-mlk",
+"name": "Martin Luther King Jr. Day",
+"country": "United States",
+"date": "The third Monday in January",
+"month": null,
+"day": null,
+"type": "public holiday",
+"note": "Honours Martin Luther King Jr., born on 15 January 1929. Signed into law in 1983 and first observed in 1986.",
+"events": [
+5266,
+5290,
+6503
+],
+"origin": 5266
+},
+{
+"id": "us-washington",
+"name": "Washington's Birthday (Presidents' Day)",
+"country": "United States",
+"date": "The third Monday in February",
+"month": null,
+"day": null,
+"type": "public holiday",
+"note": "Officially Washington's Birthday — he was born on 22 February 1732 — and a federal holiday since 1879. Moved to a Monday in 1971, it is widely called Presidents' Day.",
+"events": [
+12056,
+6500
+],
+"origin": 12056
+},
+{
+"id": "us-memorial",
+"name": "Memorial Day",
+"country": "United States",
+"date": "The last Monday in May",
+"month": null,
+"day": null,
+"type": "public holiday",
+"note": "Began after the Civil War as Decoration Day, when people decorated soldiers' graves. A federal holiday since 1888; it now honours all Americans who died in military service.",
+"events": [
+10122,
+11501,
+11503,
+6500
+],
+"origin": 11501
+},
+{
+"id": "us-juneteenth",
+"name": "Juneteenth",
+"country": "United States",
+"date": "19 June",
+"month": 6,
+"day": 19,
+"type": "public holiday",
+"note": "Marks 19 June 1865, when news of freedom reached enslaved people in Galveston, Texas. Celebrated by Black communities for over 150 years before it became a federal holiday in 2021.",
+"events": [
+10124,
+11502,
+10133,
+21500
+],
+"origin": 11502
+},
+{
+"id": "us-independence",
+"name": "Independence Day",
+"country": "United States",
+"date": "4 July",
+"month": 7,
+"day": 4,
+"type": "public holiday",
+"note": "Marks the adoption of the Declaration of Independence on 4 July 1776.",
+"events": [
+12052,
+305,
+11504
+],
+"origin": 305
+},
+{
+"id": "us-labor",
+"name": "Labor Day",
+"country": "United States",
+"date": "The first Monday in September",
+"month": null,
+"day": null,
+"type": "public holiday",
+"note": "Honours working people. Unlike most countries, the US marks it in September rather than on 1 May — even though May Day grew from the Haymarket affair in Chicago.",
+"events": [
+10185,
+11506
+],
+"origin": 11506
+},
+{
+"id": "us-columbus",
+"name": "Columbus Day / Indigenous Peoples' Day",
+"country": "United States",
+"date": "The second Monday in October",
+"month": null,
+"day": null,
+"type": "public holiday",
+"note": "Marks Columbus's landing in the Americas in 1492, which is older than Weft's timeline. Observed nationally since the 1930s and a federal holiday since 1968; many states and cities now keep it as Indigenous Peoples' Day instead, and in 2021 the president issued the first proclamation recognising that day.",
+"events": [
+6500
+],
+"origin": 6500
+},
+{
+"id": "us-veterans",
+"name": "Veterans Day",
+"country": "United States",
+"date": "11 November",
+"month": 11,
+"day": 11,
+"type": "public holiday",
+"note": "Began as Armistice Day, marking the end of the First World War, and was renamed Veterans Day in 1954 to honour all who served.",
+"events": [
+5050,
+6500
+],
+"origin": 5050
+},
+{
+"id": "us-thanksgiving",
+"name": "Thanksgiving",
+"country": "United States",
+"date": "The fourth Thursday in November",
+"month": null,
+"day": null,
+"type": "public holiday",
+"note": "Traced to a harvest feast shared by English settlers and Wampanoag people at Plymouth in 1621, which is older than Weft's timeline. Presidents proclaimed days of thanksgiving from 1789; Lincoln made it a yearly national holiday in 1863, and a 1941 law fixed it on the fourth Thursday. Since 1970, many Native Americans have kept the same day as a National Day of Mourning.",
+"events": [
+13000,
+11500,
+11504,
+6501
+],
+"origin": 13000
+},
+{
+"id": "us-christmas",
+"name": "Christmas Day",
+"country": "United States",
+"date": "25 December",
+"month": 12,
+"day": 25,
+"type": "public holiday",
+"note": "One of the four original federal holidays of 1870. Its origins are older than 1700, where Weft's timeline begins.",
+"events": [
+11504
+],
+"origin": 11504
+}
+]
+}

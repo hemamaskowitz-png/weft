@@ -795,5 +795,6 @@
   "jerusalem": [
    "western-asia"
   ]
- }
+ },
+ "holidays": "data/holidays.json"
 }
