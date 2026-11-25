@@ -281,6 +281,11 @@
   /* Read more — reporting from the time, documents and histories */
   .src-row { margin-top: 0.9rem; }
   .src-row:empty { display: none; }
+  .hol-chip { display: inline-flex; align-items: center; gap: 0.35rem; margin: 0 0.35rem 0.4rem 0; padding: 0.3rem 0.6rem; border-radius: 999px; border: 1px solid rgba(232,200,120,0.4); background: rgba(232,200,120,0.08); color: #e8c878; font: inherit; font-size: 0.68rem; cursor: pointer; }
+  .hol-chip:hover { background: rgba(232,200,120,0.16); }
+  .hol-chip small { color: #8a9ab8; font-size: 0.62rem; }
+  .hol-wrap { margin-bottom: 0.6rem; }
+  .wp-hnote { font-size: 0.8rem; color: #c8d4e8; line-height: 1.55; margin-top: 0.7rem; }
   .src-label { font-family: 'Space Mono', monospace; font-size: 0.55rem; letter-spacing: 0.12em; text-transform: uppercase; color: #5a6a80; margin-bottom: 0.35rem; }
   .src-item { display: block; text-decoration: none; padding: 0.4rem 0.55rem; margin-bottom: 0.3rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); transition: border-color 0.15s, background 0.15s; }
   .src-item:hover { border-color: rgba(232,200,120,0.5); background: rgba(232,200,120,0.06); }
@@ -578,6 +583,25 @@ window.WeftWho = (() => {
   }
 
 
+  // ── Holidays: a day people keep returning to, and the thread of events behind it ──
+  function holidaysFor(id) { return (D.holidays || []).filter(h => h.events.includes(id)); }
+  function openHoliday(hid) {
+    const h = (D.holidays || []).find(x => x.id === hid); if (!h) return;
+    const byId = new Map(D.events.map(e => [e.id, e]));
+    const evs = h.events.map(i => byId.get(i)).filter(Boolean).sort((a, b) => evKey(a) - evKey(b));
+    body().innerHTML = `
+      <div class="wp-kind">${h.type === 'observance' ? 'Observance' : 'Public holiday'} &middot; ${esc(h.country)}</div>
+      <div class="wp-name">${esc(h.name)}</div>
+      <div class="wp-desc">${esc(h.date)}</div>
+      <div class="wp-hnote">${esc(h.note)}</div>
+      <div class="wp-sec">${evs.length ? `The thread &middot; ${evs.length} event${evs.length === 1 ? '' : 's'}` : 'Not on the loom yet'}</div>
+      <div class="wp-events" id="wpEvents"></div>`;
+    const list = body().querySelector('#wpEvents');
+    evs.forEach(e => list.appendChild(eventRow(e)));
+    panel().classList.add('on'); panel().scrollTop = 0;
+    onClose();
+  }
+
   // ── Search: words for people, places and events; dates as a year, month, day or range ──
     const fold = t => String(t || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
     .replace(/[łŁ]/g, 'l').replace(/[øØ]/g, 'o').replace(/[đĐ]/g, 'd').replace(/ß/g, 'ss').replace(/æ/g, 'ae').replace(/œ/g, 'oe')
@@ -595,6 +619,7 @@ window.WeftWho = (() => {
       }),
       pp: Object.entries(D.people).map(([k, p]) => ({ k, p, name: fold(p.name), hay: fold(p.name + ' ' + (p.desc || '')) })),
       pl: Object.entries(D.places).map(([k, p]) => ({ k, p, name: fold(p.name), hay: fold(p.name + ' ' + p.country) })),
+      hol: (D.holidays || []).map(h => ({ h, name: fold(h.name), hay: fold([h.name, h.country, h.country === 'United Kingdom' ? 'uk britain british' : h.country === 'United States' ? 'usa us america american' : 'sa', h.date, h.type, 'holiday holidays public national day'].join(' ')) })),
     };
   }
   function parseQuery(q) {
@@ -625,15 +650,16 @@ window.WeftWho = (() => {
     const { date, words } = parseQuery(q);
     const has = (hay, w) => (' ' + hay).includes(' ' + w);   // match from the start of a word
     const all = h => words.every(w => has(h, w));
-    let people = [], places = [];
+    let people = [], places = [], holidays = [];
     if (words.length && !date) {
+      holidays = idx.hol.filter(x => all(x.hay)).sort((a, b) => (all(b.name) - all(a.name))).map(x => x.h);
       people = idx.pp.filter(x => all(x.hay)).sort((a, b) => (all(b.name) - all(a.name)) || a.p.name.localeCompare(b.p.name)).map(x => x.k);
       places = idx.pl.filter(x => all(x.hay)).sort((a, b) => (all(b.name) - all(a.name)) || a.p.name.localeCompare(b.p.name)).map(x => x.k);
     }
     const events = idx.ev.filter(x => dateHit(x.e, date) && (!words.length || all(x.hay)))
       .sort((a, b) => words.length && !date ? (all(b.title) - all(a.title)) || (evKey(a.e) - evKey(b.e)) : evKey(a.e) - evKey(b.e))
       .map(x => x.e);
-    return { date, words, people, places, events };
+    return { date, words, people, places, holidays, events };
   }
   function mountSearch(input, list, hooks = {}) {
     const clear = input.parentElement.querySelector('.ws-clear');
@@ -649,6 +675,7 @@ window.WeftWho = (() => {
       list.innerHTML = ''; rows = []; sel = -1;
       const head = t => { const h = document.createElement('div'); h.className = 'ws-h'; h.textContent = t; list.appendChild(h); };
       const add = (html, fn, cls = '') => { const b = document.createElement('button'); b.className = 'ws-row ' + cls; b.innerHTML = html; const i = rows.length; b.addEventListener('click', () => go(i)); b.addEventListener('mousemove', () => mark(i)); rows.push({ el: b, go: fn }); list.appendChild(b); };
+      if (r.holidays.length) { head('Holidays'); r.holidays.slice(0, 12).forEach(h => add(`<span class="i">📅</span><span class="t">${esc(h.name)}<span class="s">${esc(h.country)} · ${esc(h.date)}</span></span>`, () => { openHoliday(h.id); if (innerWidth >= 700 && h.origin) onJump(h.origin); })); }
       if (r.people.length) { head('People'); r.people.slice(0, 6).forEach(k => { const p = D.people[k]; add(`<span class="i">👤</span><span class="t">${esc(p.name)}<span class="s">${esc(p.desc || '')}</span></span>`, () => openPerson(k)); }); }
       if (r.places.length) { head('Places'); r.places.slice(0, 5).forEach(k => { const p = D.places[k]; add(`<span class="i">📍</span><span class="t">${esc(p.name)}<span class="s">${esc(p.country)}</span></span>`, () => openPlace(k)); }); }
       const MAX = 60;
@@ -685,6 +712,7 @@ window.WeftWho = (() => {
     const parts = await Promise.all(m.files.map(f => get(f.file).catch(() => null)));
     const out = { domains: m.domains, files: m.files, regions: m.regions || [], countryRegions: m.countryRegions || {}, placeRegions: m.placeRegions || {}, events: [], people: {}, places: {} };
     parts.forEach(p => { if (!p) return; out.events.push(...p.events); Object.assign(out.people, p.people); Object.assign(out.places, p.places); });
+    out.holidays = m.holidays ? ((await get(m.holidays).catch(() => null)) || {}).holidays || [] : [];
     out.events.sort((a, b) => (a.year - b.year) || (a.month - b.month) || (a.day - b.day) || (a.id - b.id));
     return out;
   }
@@ -694,6 +722,14 @@ window.WeftWho = (() => {
   function renderSources(el, ev) {
     if (!el) return;
     el.innerHTML = '';
+    const hs = ev ? holidaysFor(ev.id) : [];
+    if (hs.length) {
+      const lab = document.createElement('div'); lab.className = 'src-label'; lab.textContent = 'Remembered today as'; el.appendChild(lab);
+      const w = document.createElement('div'); w.className = 'hol-wrap';
+      hs.forEach(h => { const b = document.createElement('button'); b.className = 'hol-chip';
+        b.innerHTML = `📅 ${esc(h.name)} <small>${esc(h.country)} · ${esc(h.date)}</small>`; b.addEventListener('click', () => openHoliday(h.id)); w.appendChild(b); });
+      el.appendChild(w);
+    }
     const list = (ev && ev.sources) || [];
     if (!list.length) return;
     const lab = document.createElement('div'); lab.className = 'src-label'; lab.textContent = 'Read more'; el.appendChild(lab);
@@ -755,7 +791,7 @@ window.WeftWho = (() => {
   }
   function getLens() { return lensKey; }
 
-  return { withLens, regionsOf, inLens, setLens, getLens, mountLens, lensLabel, renderSources, loadAll, search, mountSearch, init, renderChips, openPerson, openPlace, close, life, fmtDate, fmtPlace, image, world, fmtEvDate, renderResponses, responseIds };
+  return { openHoliday, holidaysFor, withLens, regionsOf, inLens, setLens, getLens, mountLens, lensLabel, renderSources, loadAll, search, mountSearch, init, renderChips, openPerson, openPlace, close, life, fmtDate, fmtPlace, image, world, fmtEvDate, renderResponses, responseIds };
 })();
 </script>
 <!--/WEFT-WHO-->
